@@ -64,10 +64,11 @@ export default function MoviesPage() {
       ) : (
         <div className="space-y-4 stagger-children">
           {movies.map((movie) => {
-            const iWasThere = user && movie.partyMembers.some((m) => m.user.id === user.userId);
+            const partyPast = movie.party && new Date(movie.party.date) < new Date();
+            const iWasThere = partyPast && user && movie.partyMembers.some((m) => m.user.id === user.userId);
             return (
             <button key={movie.id} onClick={() => setSelectedMovie(movie)}
-              className={`glass-card rounded-2xl overflow-hidden text-left transition-all duration-300 poster-hover w-full flex group ${iWasThere ? "ring-2 ring-amber-400/40 bg-amber-400/[0.03]" : ""}`}>
+              className={`glass-card rounded-2xl overflow-hidden text-left transition-all duration-300 poster-hover w-full flex group ${partyPast ? "ring-1 ring-amber-400/20 bg-amber-400/[0.02]" : ""}`}>
               {movie.poster ? (
                 <div className="relative w-40 sm:w-52 shrink-0 overflow-hidden">
                   <img src={movie.poster} alt={movie.title}
@@ -76,6 +77,11 @@ export default function MoviesPage() {
                   {movie.avgRating > 0 && (
                     <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm text-amber-400 font-black px-3 py-1 rounded-xl text-sm">
                       {movie.avgRating.toFixed(1)} ★
+                    </div>
+                  )}
+                  {partyPast && (
+                    <div className="absolute top-3 right-3 bg-emerald-500/90 backdrop-blur-sm text-white font-bold px-3 py-1 rounded-xl text-xs">
+                      Переглянуто
                     </div>
                   )}
                   {iWasThere && (
