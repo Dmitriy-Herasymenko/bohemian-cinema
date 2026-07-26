@@ -5,7 +5,7 @@ import { useAuth } from "@/components/AuthContext";
 import Link from "next/link";
 
 interface Party { id: string; title: string; date: string; }
-interface Vote { rating: number; user: { name: string } }
+interface Vote { rating: number; user: { id: string; name: string } }
 interface Comment { id: string; text: string; user: { id: string; name: string; avatar: string | null }; createdAt: string }
 interface Member { user: { id: string; name: string; avatar: string | null } }
 
@@ -148,8 +148,15 @@ export default function MoviesPage() {
 
 
 function MovieDetail({ movie, onBack }: { movie: Movie; onBack: () => void }) {
-  const [rating, setRating] = useState(7);
+  const { user } = useAuth();
+  const isMember = user && movie.partyMembers.some((m) => m.user.id === user.userId);
+  const existingVote = movie.votes.find((v) => v.user.id === user?.userId);
+  const [rating, setRating] = useState(existingVote?.rating || 7);
   const [commentText, setCommentText] = useState("");
+
+  useEffect(() => {
+    if (existingVote) setRating(existingVote.rating);
+  }, [existingVote]);
 
   const handleVote = async () => {
     await fetch("/api/votes", {
@@ -218,6 +225,22 @@ function MovieDetail({ movie, onBack }: { movie: Movie; onBack: () => void }) {
           )}
         </div>
       </div>
+
+      {isMember && (
+        <div className="glass-card rounded-2xl p-8">
+          <h2 className="text-xl font-bold mb-4">{existingVote ? "Змінити оцінку" : "Оцінити фільм"}</h2>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-3 bg-surface-input border border-border rounded-xl px-4 py-3">
+              <input type="range" min={1} max={10} value={rating} onChange={(e) => setRating(Number(e.target.value))} className="w-32 accent-amber-400" />
+              <span className="text-3xl font-black text-amber-400 w-10 text-center animate-fade-in-scale" key={rating}>{rating}</span>
+            </div>
+            <button onClick={handleVote}
+              className="bg-gradient-to-r from-amber-500 to-amber-400 text-gray-900 px-8 py-3 rounded-xl font-bold hover:from-amber-400 hover:to-amber-300 transition-all duration-300 btn-press shadow-lg shadow-amber-400/20">
+              {existingVote ? "Оновити" : "Голосувати"}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="glass-card rounded-2xl p-8">
         <h2 className="text-xl font-bold mb-4">Оцінки ({movie.votes.length})</h2>
