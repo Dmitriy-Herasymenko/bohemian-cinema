@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  avatar    String?
+  createdAt DateTime @default(now())
+  votes     Vote[]
+  comments  Comment[]
+}
+
+model Movie {
+  id          String   @id @default(uuid())
+  title       String
+  year        Int?
+  poster      String?
+  description String?
+  status      String   @default("watched") // watched, upcoming
+  createdAt   DateTime @default(now())
+  votes       Vote[]
+  comments    Comment[]
+}
+
+model Vote {
+  id        String @id @default(uuid())
+  userId    String
+  movieId   String
+  rating    Int    // 1-10
+  user      User   @relation(fields: [userId], references: [id])
+  movie     Movie  @relation(fields: [movieId], references: [id])
+
+  @@unique([userId, movieId])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  userId    String
+  movieId   String
+  text      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  movie     Movie    @relation(fields: [movieId], references: [id])
+}
