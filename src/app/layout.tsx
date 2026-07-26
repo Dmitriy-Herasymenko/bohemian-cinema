@@ -3,7 +3,7 @@ import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "MoviesDrunk",
+  title: "Bohemian Cinema",
   description: "Rate movies with friends",
 };
 
@@ -14,9 +14,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="uk">
-      <body className="bg-gray-950 text-gray-100 min-h-screen">
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="bg-surface text-gray-100 min-h-screen font-[--font-display]">
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/5 rounded-full blur-[120px]" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-amber-600/5 rounded-full blur-[120px]" />
+        </div>
         <Navbar />
-        <main className="max-w-6xl mx-auto px-4 py-8">{children}</main>
+        <main className="relative max-w-6xl mx-auto px-4 py-8 pb-20">{children}</main>
       </body>
     </html>
   );

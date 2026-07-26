@@ -13,7 +13,6 @@ export function AddMovieForm({ onAdd, defaultStatus = "watched" }: { onAdd: () =
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-
     setLoading(true);
     await fetch("/api/movies", {
       method: "POST",
@@ -31,47 +30,39 @@ export function AddMovieForm({ onAdd, defaultStatus = "watched" }: { onAdd: () =
     onAdd();
   };
 
+  const inputClass = "w-full bg-surface-input border border-border rounded-xl px-4 py-3 focus:outline-none focus:border-amber-400 focus:shadow-lg focus:shadow-amber-400/5 transition-all duration-300 placeholder:text-gray-600";
+
   return (
-    <form onSubmit={handleSubmit} className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
-      <h2 className="text-xl font-bold">
+    <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-8 space-y-5 animate-fade-in-scale">
+      <h2 className="text-xl font-bold flex items-center gap-2">
+        <span>{defaultStatus === "watched" ? "🎥" : "📋"}</span>
         {defaultStatus === "watched" ? "Додати переглянутий фільм" : "Додати майбутній фільм"}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <input
-          type="text" placeholder="Назва фільму *"
-          value={title} onChange={(e) => setTitle(e.target.value)}
-          className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-amber-400"
-          required
-        />
-        <input
-          type="number" placeholder="Рік"
-          value={year} onChange={(e) => setYear(e.target.value)}
-          className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-amber-400"
-        />
+        <input type="text" placeholder="Назва фільму *" value={title} onChange={(e) => setTitle(e.target.value)}
+          className={inputClass} required />
+        <input type="number" placeholder="Рік" value={year} onChange={(e) => setYear(e.target.value)}
+          className={inputClass} />
       </div>
-      <textarea
-        placeholder="Опис (опціонально)"
-        value={description} onChange={(e) => setDescription(e.target.value)}
-        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-amber-400 h-20 resize-none"
-      />
-      <input
-        type="url" placeholder="URL картинки постера (опціонально)"
-        value={poster} onChange={(e) => setPoster(e.target.value)}
-        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-amber-400"
-      />
-      <input
-        type="url" placeholder="Посилання на YouTube трейлер (опціонально)"
-        value={trailerUrl} onChange={(e) => setTrailerUrl(e.target.value)}
-        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-amber-400"
-      />
+      <textarea placeholder="Опис (опціонально)" value={description} onChange={(e) => setDescription(e.target.value)}
+        className={`${inputClass} h-24 resize-none`} />
+      <input type="url" placeholder="URL картинки постера (опціонально)" value={poster} onChange={(e) => setPoster(e.target.value)}
+        className={inputClass} />
+      <input type="url" placeholder="Посилання на YouTube трейлер (опціонально)" value={trailerUrl} onChange={(e) => setTrailerUrl(e.target.value)}
+        className={inputClass} />
       {poster && (
-        <img src={poster} alt="Preview" className="h-40 rounded-lg object-cover" />
+        <div className="animate-fade-in-scale">
+          <img src={poster} alt="Preview" className="h-48 rounded-xl object-cover shadow-lg shadow-black/30" />
+        </div>
       )}
-      <button
-        type="submit" disabled={loading || !title.trim()}
-        className="bg-amber-400 text-gray-900 px-6 py-2 rounded-lg font-medium hover:bg-amber-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      >
-        {loading ? "Додаю..." : "Додати фільм"}
+      <button type="submit" disabled={loading || !title.trim()}
+        className="w-full bg-gradient-to-r from-amber-500 to-amber-400 text-gray-900 py-3 rounded-xl font-bold text-lg hover:from-amber-400 hover:to-amber-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 btn-press shadow-lg shadow-amber-400/20">
+        {loading ? (
+          <span className="inline-flex items-center gap-2">
+            <span className="w-5 h-5 border-2 border-gray-900/30 border-t-gray-900 rounded-full animate-spin" />
+            Додаю...
+          </span>
+        ) : "Додати фільм"}
       </button>
     </form>
   );

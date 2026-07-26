@@ -15,7 +15,7 @@ export function YouTubeEmbed({ url }: { url: string }) {
   if (!match) return null;
 
   return (
-    <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+    <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl shadow-black/40 animate-fade-in-scale">
       <iframe
         src={`https://www.youtube.com/embed/${match[1]}`}
         title="YouTube trailer"
@@ -36,39 +36,53 @@ export function MovieCard({
   return (
     <button
       onClick={onClick}
-      className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden text-left hover:border-amber-400/50 transition-colors w-full"
+      className="glass-card rounded-2xl overflow-hidden text-left transition-all duration-400 poster-hover w-full group"
     >
       {movie.poster ? (
-        <div className="relative h-64 overflow-hidden">
+        <div className="relative h-72 overflow-hidden">
           <img
             src={movie.poster}
             alt={movie.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-surface-card via-surface-card/30 to-transparent" />
+          {movie.avgRating > 0 && (
+            <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-amber-400 font-black text-lg px-3 py-1 rounded-xl">
+              {movie.avgRating.toFixed(1)}
+            </div>
+          )}
         </div>
       ) : (
-        <div className="h-64 bg-gray-800 flex items-center justify-center text-4xl">
+        <div className="h-72 bg-surface-hover flex items-center justify-center text-6xl group-hover:scale-110 transition-transform duration-700">
           🎬
         </div>
       )}
       <div className="p-5">
-        <h3 className="font-semibold text-lg">
+        <h3 className="font-bold text-lg truncate">
           {movie.title}
-          {movie.year && <span className="text-gray-500 ml-2">({movie.year})</span>}
+          {movie.year && <span className="text-gray-600 ml-2 text-sm font-normal">({movie.year})</span>}
         </h3>
         {movie.description && (
-          <p className="text-gray-400 text-sm mt-2 line-clamp-2">{movie.description}</p>
+          <p className="text-gray-500 text-sm mt-2 line-clamp-2 leading-relaxed">{movie.description}</p>
         )}
-        <div className="flex items-center gap-4 mt-3">
+        <div className="flex items-center gap-4 mt-4">
           {movie.avgRating > 0 ? (
-            <span className="text-amber-400 font-bold text-xl">
-              {movie.avgRating.toFixed(1)}
-            </span>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: 5 }, (_, i) => {
+                const starVal = (i + 1) * 2;
+                const filled = movie.avgRating >= starVal;
+                const half = !filled && movie.avgRating >= starVal - 1;
+                return (
+                  <span key={i} className={`text-sm ${filled ? "text-amber-400" : half ? "text-amber-400/50" : "text-gray-700"}`}>
+                    ★
+                  </span>
+                );
+              })}
+            </div>
           ) : (
             <span className="text-gray-600 text-sm">Без оцінок</span>
           )}
-          <span className="text-gray-500 text-sm">
+          <span className="text-gray-600 text-xs">
             {movie.totalVotes} {movie.totalVotes === 1 ? "голос" : "голосів"}
           </span>
         </div>

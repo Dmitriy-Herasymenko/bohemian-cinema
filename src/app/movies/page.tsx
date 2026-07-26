@@ -38,23 +38,26 @@ export default function MoviesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Переглянуті фільми</h1>
+        <h1 className="text-3xl font-black tracking-tight flex items-center gap-3">
+          <span className="text-amber-400">🎬</span> Переглянуті фільми
+        </h1>
         <button onClick={() => setShowForm(!showForm)}
-          className="bg-amber-400 text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-amber-300 transition-colors">
-          {showForm ? "Скасувати" : "+ Додати фільм"}
+          className="bg-gradient-to-r from-amber-500 to-amber-400 text-gray-900 px-5 py-2.5 rounded-xl font-bold hover:from-amber-400 hover:to-amber-300 transition-all duration-300 btn-press shadow-lg shadow-amber-400/20">
+          {showForm ? "✕ Скасувати" : "+ Додати"}
         </button>
       </div>
 
       {showForm && <AddMovieForm onAdd={() => { fetchMovies(); setShowForm(false); }} />}
 
       {watchedMovies.length === 0 ? (
-        <div className="text-center py-16 text-gray-500">
-          Ще немає переглянутих фільмів. Додайте перший!
+        <div className="text-center py-20">
+          <div className="text-6xl mb-4 animate-float">🎞️</div>
+          <p className="text-gray-600 text-lg">Ще немає переглянутих фільмів. Додайте перший!</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 stagger-children">
           {watchedMovies.map((movie) => (
             <MovieCard key={movie.id} movie={movie} onClick={() => setSelectedId(movie.id)} />
           ))}

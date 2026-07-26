@@ -7,51 +7,50 @@ interface Movie {
   title: string;
   year: number | null;
   description: string | null;
+  poster: string | null;
 }
 
 export default function RoulettePage() {
   const [upcoming, setUpcoming] = useState<Movie[]>([]);
   const [selected, setSelected] = useState<Movie | null>(null);
   const [spinning, setSpinning] = useState(false);
-  const [history, setHistory] = useState<Movie[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [history, setHistory] = useState<Movie[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    fetch("/api/movies")
-      .then((r) => r.json())
-      .then((movies: (Movie & { status: string })[]) => {
-        setUpcoming(movies.filter((m) => m.status === "upcoming"));
-      });
+    fetch("/api/movies").then((r) => r.json()).then((movies: (Movie & { status: string })[]) => {
+      setUpcoming(movies.filter((m) => m.status === "upcoming"));
+    });
   }, []);
 
   const spin = () => {
     if (upcoming.length === 0 || spinning) return;
-
     setSelected(null);
+    setShowConfetti(false);
     setSpinning(true);
     let count = 0;
-    const totalCycles = 20 + Math.floor(Math.random() * 10);
+    const totalCycles = 25 + Math.floor(Math.random() * 10);
 
     intervalRef.current = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % upcoming.length);
       count++;
-
       if (count >= totalCycles) {
         if (intervalRef.current) clearInterval(intervalRef.current);
         const finalIndex = Math.floor(Math.random() * upcoming.length);
         setCurrentIndex(finalIndex);
         setSelected(upcoming[finalIndex]);
         setSpinning(false);
+        setShowConfetti(true);
         setHistory((prev) => [upcoming[finalIndex], ...prev].slice(0, 5));
+        setTimeout(() => setShowConfetti(false), 3000);
       }
-    }, 80 + count * 5);
+    }, 60 + count * 4);
   };
 
   useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, []);
 
   const removeFromList = async (id: string) => {
@@ -60,105 +59,141 @@ export default function RoulettePage() {
     setSelected(null);
   };
 
+  const confettiColors = ["#fbbf24", "#f59e0b", "#d97706", "#ef4444", "#22c55e", "#3b82f6", "#a855f7"];
+
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold">🎲 Рулетка вибору</h1>
+    <div className="space-y-10 animate-fade-in">
+      <h1 className="text-3xl font-black tracking-tight flex items-center gap-3">
+        <span className="text-amber-400">🎲</span> Рулетка вибору
+      </h1>
 
       {upcoming.length === 0 ? (
-        <div className="text-center py-16 text-gray-500">
-          Немає фільмів для вибору. Додайте фільми у список &quot;Дивитись далі&quot;!
+        <div className="text-center py-20">
+          <div className="text-6xl mb-4 animate-float">🎰</div>
+          <p className="text-gray-600 text-lg">Немає фільмів для вибору. Додайте у список &quot;Далі&quot;!</p>
         </div>
       ) : (
         <>
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
-            <div className="mb-8">
-              <div
-                className={`inline-block transition-all duration-100 ${
-                  spinning
-                    ? "scale-110 text-amber-400"
-                    : selected
-                      ? "scale-100"
-                      : "text-gray-500"
-                }`}
-              >
-                {spinning ? (
-                  <div className="text-4xl font-bold animate-pulse">
+          {/* Roulette wheel */}
+          <div className="glass-card rounded-3xl p-10 text-center animate-slide-up relative overflow-hidden">
+            {/* Confetti */}
+            {showConfetti && (
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {Array.from({ length: 30 }, (_, i) => (
+                  <div key={i} className="confetti-piece" style={{
+                    left: `${Math.random() * 100}%`,
+                    backgroundColor: confettiColors[i % confettiColors.length],
+                    animationDuration: `${2 + Math.random() * 2}s`,
+                    animationDelay: `${Math.random() * 0.5}s`,
+                    borderRadius: Math.random() > 0.5 ? "50%" : "2px",
+                    width: `${6 + Math.random() * 8}px`,
+                    height: `${6 + Math.random() * 8}px`,
+                  }} />
+                ))}
+              </div>
+            )}
+
+            {/* Current movie display */}
+            <div className="min-h-[220px] flex items-center justify-center">
+              {spinning ? (
+                <div className="space-y-6">
+                  <div className="text-6xl animate-spin-smooth">
+                    {upcoming[currentIndex]?.poster ? (
+                      <img src={upcoming[currentIndex].poster} alt=""
+                        className="w-32 h-44 rounded-xl object-cover mx-auto shadow-2xl shadow-black/40" />
+                    ) : (
+                      <div className="w-32 h-44 rounded-xl bg-surface-hover flex items-center justify-center text-5xl mx-auto">🎬</div>
+                    )}
+                  </div>
+                  <div className="text-2xl font-bold text-amber-400 animate-pulse">
                     {upcoming[currentIndex]?.title}
                   </div>
-                ) : selected ? (
+                </div>
+              ) : selected ? (
+                <div className="space-y-6 animate-fade-in-scale">
+                  {selected.poster ? (
+                    <img src={selected.poster} alt={selected.title}
+                      className="w-48 h-64 rounded-2xl object-cover mx-auto shadow-2xl shadow-amber-400/20 poster-hover" />
+                  ) : (
+                    <div className="w-48 h-64 rounded-2xl bg-surface-hover flex items-center justify-center text-6xl mx-auto animate-float">🎬</div>
+                  )}
                   <div>
-                    <div className="text-4xl font-bold text-amber-400 mb-2">
-                      {selected.title}
-                    </div>
-                    {selected.year && (
-                      <div className="text-xl text-gray-400">({selected.year})</div>
-                    )}
+                    <div className="text-3xl font-black gradient-text">{selected.title}</div>
+                    {selected.year && <div className="text-lg text-gray-500 mt-1">({selected.year})</div>}
                     {selected.description && (
-                      <p className="text-gray-400 mt-4 max-w-md mx-auto">
-                        {selected.description}
-                      </p>
+                      <p className="text-gray-400 mt-3 max-w-md mx-auto leading-relaxed">{selected.description}</p>
                     )}
                   </div>
-                ) : (
-                  <div className="text-4xl">🎬</div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="text-7xl animate-float">🎰</div>
+                  <p className="text-gray-600">Натисни щоб обрати фільм</p>
+                </div>
+              )}
             </div>
 
-            <button
-              onClick={spin}
-              disabled={spinning}
-              className="bg-amber-400 text-gray-900 px-8 py-3 rounded-xl text-lg font-bold hover:bg-amber-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              {spinning ? "Крутиться..." : "Крутити рулетку!"}
+            {/* Spin button */}
+            <button onClick={spin} disabled={spinning}
+              className={`
+                mt-8 px-10 py-4 rounded-2xl text-lg font-bold transition-all duration-300 btn-press
+                ${spinning
+                  ? "bg-surface-hover text-gray-500 cursor-wait"
+                  : "bg-gradient-to-r from-amber-500 to-amber-400 text-gray-900 hover:from-amber-400 hover:to-amber-300 shadow-xl shadow-amber-400/20 hover:shadow-amber-400/30"
+                }
+              `}>
+              {spinning ? (
+                <span className="inline-flex items-center gap-3">
+                  <span className="w-5 h-5 border-2 border-gray-500/30 border-t-gray-500 rounded-full animate-spin" />
+                  Крутиться...
+                </span>
+              ) : "Крутити рулетку!"}
             </button>
 
+            {/* Actions after selection */}
             {selected && !spinning && (
-              <div className="mt-6 flex justify-center gap-3">
-                <button
-                  onClick={() => removeFromList(selected.id)}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-500 transition-colors"
-                >
+              <div className="mt-8 flex justify-center gap-3 animate-slide-up">
+                <button onClick={() => removeFromList(selected.id)}
+                  className="bg-gradient-to-r from-green-600 to-green-500 text-white px-6 py-3 rounded-xl font-bold hover:from-green-500 hover:to-green-400 transition-all duration-300 btn-press shadow-lg shadow-green-600/20">
                   ✅ Подивились!
                 </button>
-                <button
-                  onClick={() => setSelected(null)}
-                  className="bg-gray-800 text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  Ще раз
+                <button onClick={spin}
+                  className="bg-surface-hover border border-border text-gray-300 px-6 py-3 rounded-xl font-bold hover:border-amber-400/30 transition-all duration-300 btn-press">
+                  🔄 Ще раз
                 </button>
               </div>
             )}
           </div>
 
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <h2 className="text-lg font-bold mb-3 text-gray-400">
-              Усього у списку: {upcoming.length}
+          {/* Upcoming list */}
+          <div className="glass-card rounded-2xl p-6 animate-slide-up" style={{ animationDelay: "0.1s" }}>
+            <h2 className="text-lg font-bold mb-4 text-gray-400 flex items-center gap-2">
+              <span>📋</span> Усього у списку: <span className="text-amber-400">{upcoming.length}</span>
             </h2>
             <div className="flex flex-wrap gap-2">
               {upcoming.map((m) => (
-                <span
-                  key={m.id}
-                  className="bg-gray-800 text-gray-300 px-3 py-1 rounded-full text-sm"
-                >
+                <span key={m.id}
+                  className="bg-surface-hover border border-border text-gray-400 px-4 py-2 rounded-xl text-sm hover:border-amber-400/30 transition-colors">
                   {m.title}
                 </span>
               ))}
             </div>
           </div>
 
+          {/* History */}
           {history.length > 0 && (
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-              <h2 className="text-lg font-bold mb-3 text-gray-400">Історія рулетки</h2>
-              <div className="space-y-2">
+            <div className="glass-card rounded-2xl p-6 animate-slide-up" style={{ animationDelay: "0.2s" }}>
+              <h2 className="text-lg font-bold mb-4 text-gray-400 flex items-center gap-2">
+                <span>🕐</span> Історія рулетки
+              </h2>
+              <div className="space-y-2 stagger-children">
                 {history.map((m, i) => (
-                  <div key={`${m.id}-${i}`} className="flex items-center gap-3">
-                    <span className="text-gray-600 w-6">{i + 1}.</span>
-                    <span className="text-gray-300">
+                  <div key={`${m.id}-${i}`} className="flex items-center gap-4 bg-surface-hover/50 rounded-xl px-4 py-3 border border-border/50">
+                    <span className="text-gray-700 font-bold w-6">{i + 1}</span>
+                    {m.poster && <img src={m.poster} alt="" className="w-8 h-11 rounded-lg object-cover" />}
+                    <span className="text-gray-300 font-medium">
                       {m.title}
-                      {m.year && (
-                        <span className="text-gray-500 ml-1">({m.year})</span>
-                      )}
+                      {m.year && <span className="text-gray-600 ml-1 text-sm">({m.year})</span>}
                     </span>
                   </div>
                 ))}
