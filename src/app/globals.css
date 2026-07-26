@@ -83,6 +83,12 @@
   50% { border-color: rgba(251, 191, 36, 0.5); }
 }
 
+@keyframes loading-bar {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(0%); }
+  100% { transform: translateX(100%); }
+}
+
 .animate-fade-in {
   animation: fade-in 0.5s ease-out forwards;
 }
@@ -123,6 +129,10 @@
 
 .animate-border-glow {
   animation: border-glow 2s ease-in-out infinite;
+}
+
+.animate-loading-bar {
+  animation: loading-bar 1.5s ease-in-out infinite;
 }
 
 /* Stagger children animations */

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { AuthProvider } from "@/components/AuthContext";
+import { LoadingProvider } from "@/components/LoadingContext";
 
 export const metadata: Metadata = {
   title: "Bohemian Cinema",
@@ -26,10 +27,12 @@ export default function RootLayout({
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/5 rounded-full blur-[120px]" />
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-amber-600/5 rounded-full blur-[120px]" />
         </div>
-        <AuthProvider>
-          <Navbar />
-          <main className="relative max-w-6xl mx-auto px-4 py-8 pb-20">{children}</main>
-        </AuthProvider>
+        <LoadingProvider>
+          <AuthProvider>
+            <Navbar />
+            <main className="relative max-w-6xl mx-auto px-4 py-8 pb-20">{children}</main>
+          </AuthProvider>
+        </LoadingProvider>
       </body>
     </html>
   );

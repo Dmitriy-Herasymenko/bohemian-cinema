@@ -2,20 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthContext";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+interface Creator { id: string; name: string; avatar: string | null }
 interface Movie {
   id: string;
   title: string;
+  slug: string | null;
   year: number | null;
   poster: string | null;
   trailerUrl: string | null;
   description: string | null;
   party: { id: string; title: string } | null;
+  createdBy: Creator | null;
 }
 
 export default function FutureMoviesPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [movies, setMovies] = useState<Movie[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
@@ -37,15 +42,21 @@ export default function FutureMoviesPage() {
           upcomingMovies.push({
             id: m.id,
             title: m.title,
+            slug: m.slug,
             year: m.year,
             poster: m.poster,
             trailerUrl: m.trailerUrl,
             description: m.description,
             party: { id: p.id, title: p.title },
+            createdBy: m.createdBy || null,
           });
         }
       }
-      setMovies([...standalone, ...upcomingMovies]);
+      const standaloneWithCreator = standalone.map((m: Movie) => ({
+        ...m,
+        createdBy: m.createdBy || null,
+      }));
+      setMovies([...standaloneWithCreator, ...upcomingMovies]);
     });
   };
 
@@ -167,10 +178,13 @@ export default function FutureMoviesPage() {
         </div>
       ) : (
         <div className="space-y-4 stagger-children">
-          {movies.map((movie) => (
+          {movies.map((movie) => {
+            const href = movie.slug ? `/movies/${movie.slug}` : "#";
+            return (
             <div
               key={movie.id}
-              className="glass-card rounded-2xl overflow-hidden text-left transition-all duration-300 poster-hover w-full flex group"
+              onClick={() => router.push(href)}
+              className="glass-card rounded-2xl overflow-hidden text-left transition-all duration-300 poster-hover w-full flex group cursor-pointer"
             >
               {movie.poster ? (
                 <div className="relative w-40 sm:w-52 shrink-0 overflow-hidden">
@@ -192,7 +206,7 @@ export default function FutureMoviesPage() {
                 </div>
               )}
               <div className="flex-1 p-5 min-w-0 flex items-center justify-between">
-                <div>
+                <div className="min-w-0 flex-1">
                   <h3 className="font-bold text-lg truncate">
                     {movie.title}
                     {movie.year && (
@@ -206,15 +220,28 @@ export default function FutureMoviesPage() {
                       {movie.description}
                     </p>
                   )}
-                  {movie.party && (
-                    <div className="text-gray-600 text-xs mt-2">
-                      🍻 Заплановано на: {movie.party.title}
-                    </div>
-                  )}
+                  <div className="flex flex-wrap items-center gap-3 mt-2">
+                    {movie.party && (
+                      <span className="text-gray-600 text-xs">
+                        🍻 {movie.party.title}
+                      </span>
+                    )}
+                    {movie.createdBy && (
+                      <Link href={`/profile/${movie.createdBy.id}`} onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1.5 text-gray-500 text-xs hover:text-amber-400 transition-colors">
+                        {movie.createdBy.avatar ? (
+                          <img src={movie.createdBy.avatar} alt="" className="w-4 h-4 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-4 h-4 rounded-full bg-amber-400/20 flex items-center justify-center text-amber-400 text-[8px] font-bold">{movie.createdBy.name[0]}</div>
+                        )}
+                        <span>{movie.createdBy.name}</span>
+                      </Link>
+                    )}
+                  </div>
                 </div>
                 {user && (
                   <button
-                    onClick={() => handleDelete(movie.id)}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(movie.id); }}
                     className="text-red-400/0 group-hover:text-red-400 text-xs transition-colors ml-4 btn-press shrink-0"
                   >
                     Видалити
@@ -222,7 +249,8 @@ export default function FutureMoviesPage() {
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

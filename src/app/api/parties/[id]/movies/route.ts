@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
+import { slugify } from "@/lib/slug";
 
 export async function POST(
   request: Request,
@@ -27,14 +28,22 @@ export async function POST(
     return NextResponse.json({ error: "Назва обов'язкова" }, { status: 400 });
   }
 
+  let slug = slugify(title);
+  const yearNum = year ? parseInt(year) : null;
+  if (yearNum) slug += "-" + yearNum;
+  const existing = await prisma.movie.findUnique({ where: { slug } });
+  if (existing) slug += "-" + Date.now().toString(36);
+
   const movie = await prisma.movie.create({
     data: {
       title,
-      year: year ? parseInt(year) : null,
+      slug,
+      year: yearNum,
       description: description || null,
       poster: poster || null,
       trailerUrl: trailerUrl || null,
       partyId: id,
+      createdById: session.userId,
     },
   });
 

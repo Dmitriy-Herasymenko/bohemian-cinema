@@ -10,6 +10,7 @@ export async function GET() {
         include: {
           votes: { include: { user: true } },
           comments: { include: { user: true } },
+          createdBy: { select: { id: true, name: true, avatar: true } },
         },
       },
     },
