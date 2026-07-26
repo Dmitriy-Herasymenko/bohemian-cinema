@@ -30,7 +30,8 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
     const pending = new Set<string>();
 
     window.fetch = async function (...args: Parameters<typeof origFetch>) {
-      const url = typeof args[0] === "string" ? args[0] : args[0]?.url || "";
+      const req = args[0];
+      const url = typeof req === "string" ? req : req instanceof URL ? req.href : req?.url || "";
       if (url.startsWith("/api/")) {
         const id = url + String(Date.now());
         pending.add(id);
