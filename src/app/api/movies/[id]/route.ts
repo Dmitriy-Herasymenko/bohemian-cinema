@@ -11,6 +11,7 @@ export async function GET(
     include: {
       votes: { include: { user: true } },
       comments: { include: { user: true }, orderBy: { createdAt: "desc" } },
+      party: true,
     },
   });
 

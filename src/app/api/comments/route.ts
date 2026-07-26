@@ -1,19 +1,21 @@
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const { userId, movieId, text } = body;
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  if (!text || !userId || !movieId) {
-    return NextResponse.json(
-      { error: "Missing required fields" },
-      { status: 400 }
-    );
+  const { movieId, text } = await request.json();
+
+  if (!text || !movieId) {
+    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
   const comment = await prisma.comment.create({
-    data: { userId, movieId, text },
+    data: { userId: session.userId, movieId, text },
     include: { user: true },
   });
 

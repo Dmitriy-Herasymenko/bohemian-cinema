@@ -2,22 +2,21 @@ import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const movies = await prisma.movie.findMany({
+  const parties = await prisma.party.findMany({
     where: { status: "upcoming" },
+    include: { movies: true },
   });
 
+  const movies = parties.flatMap((p) => p.movies);
+
   if (movies.length === 0) {
-    return NextResponse.json(
-      { error: "No upcoming movies to choose from" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "No movies to choose from" }, { status: 404 });
   }
 
   const randomIndex = Math.floor(Math.random() * movies.length);
-  const selected = movies[randomIndex];
 
   return NextResponse.json({
-    movie: selected,
+    movie: movies[randomIndex],
     totalOptions: movies.length,
   });
 }

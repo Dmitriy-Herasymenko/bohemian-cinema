@@ -1,8 +1,11 @@
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
 
 export async function GET() {
+  const session = await getSession();
   const movies = await prisma.movie.findMany({
+    where: { partyId: null },
     include: {
       votes: { include: { user: true } },
       comments: { include: { user: true }, orderBy: { createdAt: "desc" } },
@@ -19,22 +22,4 @@ export async function GET() {
   }));
 
   return NextResponse.json(moviesWithRating);
-}
-
-export async function POST(request: Request) {
-  const body = await request.json();
-  const { title, year, description, poster, trailerUrl, status } = body;
-
-  const movie = await prisma.movie.create({
-    data: {
-      title,
-      year: year ? parseInt(year) : null,
-      description,
-      poster: poster || null,
-      trailerUrl: trailerUrl || null,
-      status: status || "watched",
-    },
-  });
-
-  return NextResponse.json(movie);
 }
