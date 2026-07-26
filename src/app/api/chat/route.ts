@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { notifyChatMessage } from "@/lib/notifications";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -36,6 +37,8 @@ export async function POST(request: Request) {
     data: { text: text.trim(), userId: session.userId },
     include: { user: { select: { id: true, name: true, avatar: true } } },
   });
+
+  notifyChatMessage(session.name, text.trim(), session.userId).catch(() => {});
 
   return NextResponse.json(message);
 }

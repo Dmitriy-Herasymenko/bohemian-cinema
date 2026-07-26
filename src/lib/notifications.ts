@@ -56,3 +56,38 @@ export async function notifyNewMovie(movieTitle: string, creatorName: string, mo
   console.log("[Push] Results:", results.map((r) => r.status));
   return results;
 }
+
+export async function notifyChatMessage(senderName: string, text: string, senderId: string) {
+  if (!ensureVapid()) return;
+
+  const subscriptions = await prisma.pushSubscription.findMany({
+    where: { userId: { not: senderId } },
+  });
+  console.log(`[Push] Chat: sending to ${subscriptions.length} subscriptions (excluding sender)`);
+  if (subscriptions.length === 0) return;
+
+  const truncated = text.length > 80 ? text.slice(0, 80) + "…" : text;
+  const payload = JSON.stringify({
+    title: `💬 ${senderName}`,
+    body: truncated,
+    url: "/chat",
+  });
+
+  const results = await Promise.allSettled(
+    subscriptions.map((sub) =>
+      webPush.sendNotification(
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+        payload
+      ).catch((err) => {
+        console.error(`[Push] Chat failed for sub ${sub.id}:`, err.statusCode, err.message);
+        if (err.statusCode === 404 || err.statusCode === 410) {
+          return prisma.pushSubscription.deleteMany({ where: { id: sub.id } });
+        }
+        throw err;
+      })
+    )
+  );
+
+  console.log("[Push] Chat results:", results.map((r) => r.status));
+  return results;
+}
