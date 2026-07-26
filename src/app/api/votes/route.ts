@@ -28,10 +28,16 @@ export async function POST(request: Request) {
     }
   }
 
-  const vote = await prisma.vote.upsert({
+  const existing = await prisma.vote.findUnique({
     where: { userId_movieId: { userId: session.userId, movieId } },
-    update: { rating },
-    create: { userId: session.userId, movieId, rating },
+  });
+
+  if (existing) {
+    return NextResponse.json({ error: "Ви вже оцінили цей фільм" }, { status: 409 });
+  }
+
+  const vote = await prisma.vote.create({
+    data: { userId: session.userId, movieId, rating },
   });
 
   return NextResponse.json(vote);
