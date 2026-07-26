@@ -6,7 +6,7 @@ import Link from "next/link";
 
 interface Party { id: string; title: string; date: string; }
 interface Vote { rating: number; user: { name: string } }
-interface Comment { id: string; text: string; user: { name: string; avatar: string | null }; createdAt: string }
+interface Comment { id: string; text: string; user: { id: string; name: string; avatar: string | null }; createdAt: string }
 interface Member { user: { id: string; name: string; avatar: string | null } }
 
 interface Movie {
@@ -250,12 +250,14 @@ function MovieDetail({ movie, onBack }: { movie: Movie; onBack: () => void }) {
           {movie.comments.map((c) => (
             <div key={c.id} className="bg-surface-hover/50 rounded-xl p-4 border border-border/50">
               <div className="flex items-center gap-2 mb-2">
-                {c.user.avatar ? (
-                  <img src={c.user.avatar} alt="" className="w-7 h-7 rounded-full object-cover" />
-                ) : (
-                  <div className="w-7 h-7 rounded-full bg-amber-400/20 flex items-center justify-center text-amber-400 text-xs font-bold">{c.user.name[0]}</div>
-                )}
-                <span className="font-semibold text-amber-400 text-sm">{c.user.name}</span>
+                <Link href={`/profile/${c.user.id}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                  {c.user.avatar ? (
+                    <img src={c.user.avatar} alt="" className="w-7 h-7 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-amber-400/20 flex items-center justify-center text-amber-400 text-xs font-bold">{c.user.name[0]}</div>
+                  )}
+                  <span className="font-semibold text-amber-400 text-sm">{c.user.name}</span>
+                </Link>
                 <span className="text-gray-700 text-xs">{new Date(c.createdAt).toLocaleDateString("uk-UA")}</span>
               </div>
               <p className="text-gray-300">{c.text}</p>

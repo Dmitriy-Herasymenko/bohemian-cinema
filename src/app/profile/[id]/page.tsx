@@ -9,6 +9,7 @@ interface ProfileData {
   id: string; name: string; email: string; avatar: string | null; createdAt: string;
   votes: { rating: number; movie: { id: string; title: string; year: number | null; poster: string | null; party: { id: string; title: string } | null } }[];
   parties: { party: { id: string; title: string; date: string; status: string } }[];
+  comments: { id: string; text: string; createdAt: string; movie: { id: string; title: string; poster: string | null } }[];
 }
 
 export default function ProfilePage() {
@@ -192,6 +193,32 @@ export default function ProfilePage() {
                   <span className="text-amber-400 font-bold w-6 text-right">{v.rating}</span>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Comments */}
+      {profile.comments.length > 0 && (
+        <div className="glass-card rounded-2xl p-6">
+          <h2 className="text-lg font-bold mb-4">Коментарі ({profile.comments.length})</h2>
+          <div className="space-y-2 stagger-children">
+            {profile.comments.map((c) => (
+              <Link key={c.id} href={`/movies`}
+                className="block bg-surface-hover/50 rounded-xl px-4 py-3 border border-border/50 hover:border-amber-400/20 transition-colors">
+                <div className="flex items-center gap-3 mb-2">
+                  {c.movie.poster ? (
+                    <img src={c.movie.poster} alt="" className="w-8 h-11 rounded-md object-cover" />
+                  ) : (
+                    <div className="w-8 h-11 rounded-md bg-surface-hover flex items-center justify-center text-xs">🎬</div>
+                  )}
+                  <span className="font-medium text-sm text-amber-400">{c.movie.title}</span>
+                  <span className="text-gray-700 text-xs ml-auto">
+                    {new Date(c.createdAt).toLocaleDateString("uk-UA")}
+                  </span>
+                </div>
+                <p className="text-gray-300 text-sm">{c.text}</p>
+              </Link>
             ))}
           </div>
         </div>

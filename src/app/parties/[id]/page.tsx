@@ -8,7 +8,7 @@ import { YouTubeEmbed } from "@/components/MovieCard";
 
 interface User { id: string; name: string; avatar: string | null; email: string; }
 interface Vote { userId: string; rating: number; user: { name: string }; }
-interface Comment { id: string; text: string; user: { name: string }; createdAt: string; }
+interface Comment { id: string; text: string; user: { id: string; name: string; avatar: string | null }; createdAt: string; }
 interface Movie {
   id: string; title: string; year: number | null; poster: string | null;
   trailerUrl: string | null; description: string | null;
@@ -382,8 +382,15 @@ function MovieInParty({ movie, isMember, user, onBack, onUpdate }: {
           {movie.comments.length === 0 && <p className="text-gray-600">Ще немає коментарів</p>}
           {movie.comments.map((c) => (
             <div key={c.id} className="bg-surface-hover/50 rounded-xl p-4 border border-border/50">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-semibold text-amber-400 text-sm">{c.user.name}</span>
+              <div className="flex items-center gap-2 mb-2">
+                <Link href={`/profile/${c.user.id}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                  {c.user.avatar ? (
+                    <img src={c.user.avatar} alt="" className="w-7 h-7 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-amber-400/20 flex items-center justify-center text-amber-400 text-xs font-bold">{c.user.name[0]}</div>
+                  )}
+                  <span className="font-semibold text-amber-400 text-sm">{c.user.name}</span>
+                </Link>
                 <span className="text-gray-700 text-xs">{new Date(c.createdAt).toLocaleDateString("uk-UA")}</span>
               </div>
               <p className="text-gray-300">{c.text}</p>

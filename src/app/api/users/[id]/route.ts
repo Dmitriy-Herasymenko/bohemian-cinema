@@ -26,6 +26,12 @@ export async function GET(
         include: { party: true },
         orderBy: { party: { date: "desc" } },
       },
+      comments: {
+        include: {
+          movie: { select: { id: true, title: true, poster: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
 
