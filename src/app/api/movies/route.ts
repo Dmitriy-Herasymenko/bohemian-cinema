@@ -9,6 +9,7 @@ export async function GET() {
     include: {
       votes: { include: { user: true } },
       comments: { include: { user: true }, orderBy: { createdAt: "desc" } },
+      party: true,
     },
     orderBy: { createdAt: "desc" },
   });
@@ -22,4 +23,29 @@ export async function GET() {
   }));
 
   return NextResponse.json(moviesWithRating);
+}
+
+export async function POST(request: Request) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { title, year, description, poster, trailerUrl } = await request.json();
+
+  if (!title) {
+    return NextResponse.json({ error: "Назва обов'язкова" }, { status: 400 });
+  }
+
+  const movie = await prisma.movie.create({
+    data: {
+      title,
+      year: year || null,
+      description: description || null,
+      poster: poster || null,
+      trailerUrl: trailerUrl || null,
+    },
+  });
+
+  return NextResponse.json(movie);
 }

@@ -98,7 +98,7 @@ export default function PartyDetailPage() {
       </div>
 
       {/* Movies */}
-      {isUpcoming && isMember && <AddMovieToParty partyId={party.id} onAdded={fetchParty} />}
+      {isUpcoming && isMember && <PickFutureMovie partyId={party.id} onAdded={fetchParty} />}
 
       <div>
         <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
@@ -155,8 +155,12 @@ export default function PartyDetailPage() {
   }
 
   function deleteMovie(movieId: string) {
-    if (!confirm("Видалити фільм?")) return;
-    fetch(`/api/movies/${movieId}`, { method: "DELETE" }).then(() => fetchParty());
+    if (!confirm("Видалити фільм з п'янки?")) return;
+    fetch(`/api/movies/${movieId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ partyId: null }),
+    }).then(() => fetchParty());
   }
 }
 
@@ -250,56 +254,77 @@ function AddMemberSection({ partyId, allUsers, currentMembers, onUpdate }: {
 }
 
 
-function AddMovieToParty({ partyId, onAdded }: { partyId: string; onAdded: () => void }) {
+function PickFutureMovie({ partyId, onAdded }: { partyId: string; onAdded: () => void }) {
   const [show, setShow] = useState(false);
-  const [title, setTitle] = useState("");
-  const [year, setYear] = useState("");
-  const [description, setDescription] = useState("");
-  const [poster, setPoster] = useState("");
-  const [trailerUrl, setTrailerUrl] = useState("");
+  const [futureMovies, setFutureMovies] = useState<{ id: string; title: string; year: number | null; poster: string | null }[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
+  const loadMovies = async () => {
     setLoading(true);
-    await fetch(`/api/parties/${partyId}/movies`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: title.trim(), year: year || null, description: description.trim() || null, poster: poster.trim() || null, trailerUrl: trailerUrl.trim() || null }),
-    });
-    setTitle(""); setYear(""); setDescription(""); setPoster(""); setTrailerUrl("");
-    setShow(false); setLoading(false); onAdded();
+    const res = await fetch("/api/movies");
+    const data = await res.json();
+    setFutureMovies(data);
+    setLoading(false);
   };
 
-  const input = "w-full bg-surface-input border border-border rounded-xl px-4 py-3 focus:outline-none focus:border-amber-400 transition-colors placeholder:text-gray-600";
+  const toggleShow = () => {
+    if (!show) loadMovies();
+    setShow(!show);
+  };
+
+  const addToParty = async (movieId: string) => {
+    await fetch(`/api/movies/${movieId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ partyId }),
+    });
+    onAdded();
+    loadMovies();
+  };
 
   return (
     <div className="mb-6">
       {!show ? (
-        <button onClick={() => setShow(true)}
+        <button onClick={toggleShow}
           className="bg-gradient-to-r from-amber-500 to-amber-400 text-gray-900 px-5 py-2.5 rounded-xl font-bold hover:from-amber-400 hover:to-amber-300 transition-all duration-300 btn-press shadow-lg shadow-amber-400/20">
           + Додати фільм
         </button>
       ) : (
-        <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-6 space-y-4 animate-fade-in-scale">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold">Додати фільм</h3>
-            <button type="button" onClick={() => setShow(false)} className="text-gray-500 hover:text-gray-300">✕</button>
+        <div className="glass-card rounded-2xl p-6 animate-fade-in-scale">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold">Оберіть з майбутніх фільмів</h3>
+            <button onClick={() => setShow(false)} className="text-gray-500 hover:text-gray-300">✕</button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <input type="text" placeholder="Назва *" value={title} onChange={(e) => setTitle(e.target.value)} className={input} required />
-            <input type="number" placeholder="Рік" value={year} onChange={(e) => setYear(e.target.value)} className={input} />
-          </div>
-          <textarea placeholder="Опис" value={description} onChange={(e) => setDescription(e.target.value)} className={`${input} h-16 resize-none`} />
-          <input type="url" placeholder="URL постера" value={poster} onChange={(e) => setPoster(e.target.value)} className={input} />
-          <input type="url" placeholder="YouTube трейлер URL" value={trailerUrl} onChange={(e) => setTrailerUrl(e.target.value)} className={input} />
-          {poster && <img src={poster} alt="" className="h-32 rounded-lg object-cover" />}
-          <button type="submit" disabled={loading || !title.trim()}
-            className="bg-gradient-to-r from-amber-500 to-amber-400 text-gray-900 px-6 py-2.5 rounded-xl font-bold disabled:opacity-40 transition-all duration-300 btn-press">
-            {loading ? "Додаю..." : "Додати"}
-          </button>
-        </form>
+          {loading ? (
+            <p className="text-gray-500 text-sm animate-pulse">Завантаження...</p>
+          ) : futureMovies.length === 0 ? (
+            <div className="text-center py-6">
+              <p className="text-gray-500 mb-3">Немає майбутніх фільмів</p>
+              <Link href="/future-movies"
+                className="text-amber-400 hover:text-amber-300 text-sm transition-colors">
+                Додати на сторінці Майбутні фільми →
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {futureMovies.map((m) => (
+                <button key={m.id} onClick={() => addToParty(m.id)}
+                  className="w-full flex items-center gap-3 bg-surface-hover/50 rounded-xl px-4 py-3 border border-border/50 hover:border-amber-400/30 transition-colors text-left btn-press">
+                  {m.poster ? (
+                    <img src={m.poster} alt="" className="w-10 h-14 rounded-lg object-cover shrink-0" />
+                  ) : (
+                    <div className="w-10 h-14 rounded-lg bg-surface-hover flex items-center justify-center text-sm shrink-0">🎬</div>
+                  )}
+                  <div className="min-w-0">
+                    <span className="font-medium block truncate">{m.title}</span>
+                    {m.year && <span className="text-gray-600 text-xs">({m.year})</span>}
+                  </div>
+                  <span className="text-green-400 text-sm ml-auto shrink-0">+ Додати</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

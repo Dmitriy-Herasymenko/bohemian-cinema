@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
+import { getSession } from "@/lib/auth";
 
 export async function GET(
   _request: Request,
@@ -24,6 +25,26 @@ export async function GET(
     : 0;
 
   return NextResponse.json({ ...movie, avgRating });
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const { partyId } = await request.json();
+
+  const movie = await prisma.movie.update({
+    where: { id },
+    data: { partyId: partyId || null },
+  });
+
+  return NextResponse.json(movie);
 }
 
 export async function DELETE(

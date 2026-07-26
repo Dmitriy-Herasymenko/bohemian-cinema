@@ -19,7 +19,10 @@ export function Navbar() {
           <div className="flex gap-1 ml-4">
             {[
               { href: "/parties", label: "П'янки", icon: "🍻" },
-              ...(user ? [{ href: "/movies", label: "Фільми", icon: "🎬" }] : []),
+              ...(user ? [
+                { href: "/future-movies", label: "Майбутні", icon: "🔮" },
+                { href: "/movies", label: "Архів", icon: "🎬" },
+              ] : []),
             ].map((link) => {
               const active = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
               return (
