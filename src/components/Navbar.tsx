@@ -40,9 +40,13 @@ export function Navbar() {
               <div className="flex items-center gap-3">
                 <Link href={`/profile/${user.userId}`}
                   className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-surface-hover transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-amber-400/20 flex items-center justify-center text-amber-400 text-sm font-bold">
-                    {user.name[0]}
-                  </div>
+                  {user.avatar ? (
+                    <img src={user.avatar} alt="" className="w-8 h-8 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-amber-400/20 flex items-center justify-center text-amber-400 text-sm font-bold">
+                      {user.name[0]}
+                    </div>
+                  )}
                   <span className="text-sm text-gray-300 hidden sm:inline">{user.name}</span>
                 </Link>
                 <button onClick={logout}

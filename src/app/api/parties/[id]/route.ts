@@ -38,6 +38,8 @@ export async function PATCH(
     data: {
       ...(body.status && { status: body.status }),
       ...(body.title && { title: body.title }),
+      ...(body.date && { date: new Date(body.date) }),
+      ...(body.description !== undefined && { description: body.description || null }),
     },
   });
 

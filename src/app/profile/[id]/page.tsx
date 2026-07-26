@@ -13,7 +13,7 @@ interface ProfileData {
 
 export default function ProfilePage() {
   const { id } = useParams<{ id: string }>();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, refresh } = useAuth();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState("");
@@ -41,12 +41,25 @@ export default function ProfilePage() {
     });
     setEditing(false);
     fetchProfile();
+    refresh();
   };
 
   const startEdit = () => {
     setName(profile.name);
     setAvatar(profile.avatar || "");
     setEditing(true);
+  };
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Файл занадто великий. Максимум 2MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setAvatar(reader.result as string);
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -67,9 +80,23 @@ export default function ProfilePage() {
               <div className="space-y-3">
                 <input type="text" value={name} onChange={(e) => setName(e.target.value)}
                   className="bg-surface-input border border-border rounded-xl px-4 py-2 focus:outline-none focus:border-amber-400 transition-colors" />
-                <input type="url" placeholder="URL аватара" value={avatar} onChange={(e) => setAvatar(e.target.value)}
-                  className="w-full bg-surface-input border border-border rounded-xl px-4 py-2 focus:outline-none focus:border-amber-400 transition-colors text-sm" />
-                {avatar && <img src={avatar} alt="" className="h-16 rounded-lg object-cover" />}
+                <div>
+                  <label className="block cursor-pointer">
+                    <div className="bg-surface-input border border-dashed border-border rounded-xl px-4 py-4 text-center hover:border-amber-400/50 transition-colors">
+                      {avatar ? (
+                        <img src={avatar} alt="" className="h-20 mx-auto rounded-lg object-cover mb-2" />
+                      ) : (
+                        <div className="text-gray-500 text-sm">📷 Натисни щоб завантажити фото</div>
+                      )}
+                      <div className="text-gray-600 text-xs mt-1">JPG, PNG до 2MB</div>
+                    </div>
+                    <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+                  </label>
+                  {avatar && (
+                    <button type="button" onClick={() => setAvatar("")}
+                      className="text-red-400/60 hover:text-red-400 text-xs mt-1 transition-colors">Видалити фото</button>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <button onClick={handleSave}
                     className="bg-amber-400 text-gray-900 px-4 py-1.5 rounded-lg text-sm font-bold btn-press">Зберегти</button>
