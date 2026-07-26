@@ -22,6 +22,7 @@ export default function FutureMoviesPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [movies, setMovies] = useState<Movie[]>([]);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
   const [year, setYear] = useState("");
@@ -57,6 +58,7 @@ export default function FutureMoviesPage() {
         createdBy: m.createdBy || null,
       }));
       setMovies([...standaloneWithCreator, ...upcomingMovies]);
+      setInitialLoading(false);
     });
   };
 
@@ -169,7 +171,12 @@ export default function FutureMoviesPage() {
         </form>
       )}
 
-      {movies.length === 0 ? (
+      {initialLoading ? (
+        <div className="text-center py-20">
+          <div className="inline-block w-10 h-10 border-4 border-amber-400/30 border-t-amber-400 rounded-full animate-spin mb-4" />
+          <p className="text-gray-500">Завантаження фільмів...</p>
+        </div>
+      ) : movies.length === 0 ? (
         <div className="text-center py-20">
           <div className="text-6xl mb-4 animate-float">🎞️</div>
           <p className="text-gray-600 text-lg">

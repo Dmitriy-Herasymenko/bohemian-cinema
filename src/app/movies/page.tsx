@@ -25,6 +25,7 @@ export default function MoviesPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [movies, setMovies] = useState<Movie[]>([]);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/parties").then((r) => r.json()).then((parties: { id: string; title: string; date: string; status: string; members: Member[]; movies: (Omit<Movie, "party" | "partyMembers" | "avgRating" | "totalVotes"> & { votes: Vote[]; comments: Comment[]; createdBy: Creator | null })[] }[]) => {
@@ -48,6 +49,7 @@ export default function MoviesPage() {
         return dateB.localeCompare(dateA);
       });
       setMovies(all);
+      setInitialLoading(false);
     });
   }, []);
 
@@ -57,7 +59,12 @@ export default function MoviesPage() {
         <span className="text-amber-400">🎬</span> Архів фільмів
       </h1>
 
-      {movies.length === 0 ? (
+      {initialLoading ? (
+        <div className="text-center py-20">
+          <div className="inline-block w-10 h-10 border-4 border-amber-400/30 border-t-amber-400 rounded-full animate-spin mb-4" />
+          <p className="text-gray-500">Завантаження архіву...</p>
+        </div>
+      ) : movies.length === 0 ? (
         <div className="text-center py-20">
           <div className="text-6xl mb-4 animate-float">🎞️</div>
           <p className="text-gray-600 text-lg">Ще немає фільмів. Додайте до п&apos;янки!</p>

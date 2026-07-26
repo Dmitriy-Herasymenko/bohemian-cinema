@@ -16,6 +16,10 @@ export async function GET(
           comments: { include: { user: true }, orderBy: { createdAt: "desc" } },
         },
       },
+      comments: {
+        include: { user: { select: { id: true, name: true, avatar: true } } },
+        orderBy: { createdAt: "desc" },
+      },
     },
   });
 

@@ -14,10 +14,12 @@ interface Movie {
   trailerUrl: string | null; description: string | null;
   avgRating: number; votes: Vote[]; comments: Comment[];
 }
+interface PartyComment { id: string; text: string; user: { id: string; name: string; avatar: string | null }; createdAt: string; }
 interface Party {
   id: string; title: string; date: string; status: string; description: string | null;
   members: { user: User }[];
   movies: Movie[];
+  comments: PartyComment[];
 }
 
 export default function PartyDetailPage() {
@@ -94,6 +96,36 @@ export default function PartyDetailPage() {
         </div>
         {isUpcoming && isMember && (
           <AddMemberSection partyId={party.id} allUsers={allUsers} currentMembers={party.members.map((m) => m.user.id)} onUpdate={fetchParty} />
+        )}
+      </div>
+
+      {/* Party Notes / Comments */}
+      <div className="glass-card rounded-2xl p-6">
+        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <span>📝</span> Нотатки учасників
+        </h2>
+        {party.comments.length > 0 && (
+          <div className="space-y-3 mb-4">
+            {party.comments.map((c) => (
+              <div key={c.id} className="bg-surface-hover/50 rounded-xl p-4 border border-border/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <Link href={`/profile/${c.user.id}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                    {c.user.avatar ? (
+                      <img src={c.user.avatar} alt="" className="w-7 h-7 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-amber-400/20 flex items-center justify-center text-amber-400 text-xs font-bold">{c.user.name[0]}</div>
+                    )}
+                    <span className="font-semibold text-amber-400 text-sm">{c.user.name}</span>
+                  </Link>
+                  <span className="text-gray-700 text-xs">{new Date(c.createdAt).toLocaleDateString("uk-UA")}</span>
+                </div>
+                <p className="text-gray-300">{c.text}</p>
+              </div>
+            ))}
+          </div>
+        )}
+        {isMember && user && (
+          <PartyCommentForm partyId={party.id} onUpdate={fetchParty} existingText={party.comments.find((c) => c.user.id === user.userId)?.text || ""} />
         )}
       </div>
 
@@ -434,6 +466,42 @@ function MovieInParty({ movie, isMember, user, onBack, onUpdate }: {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+
+function PartyCommentForm({ partyId, onUpdate, existingText }: { partyId: string; onUpdate: () => void; existingText: string }) {
+  const [text, setText] = useState(existingText);
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!text.trim()) return;
+    setSaving(true);
+    await fetch("/api/party-comments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ partyId, text }),
+    });
+    setSaving(false);
+    onUpdate();
+  };
+
+  return (
+    <div className="flex gap-3">
+      <textarea
+        placeholder={existingText ? "Оновити нотатку..." : "Твоя нотатка про зустріч..."}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        className="flex-1 bg-surface-input border border-border rounded-xl px-5 py-3 focus:outline-none focus:border-amber-400 transition-colors h-16 resize-none"
+      />
+      <button
+        onClick={handleSave}
+        disabled={saving || !text.trim()}
+        className="bg-gradient-to-r from-amber-500 to-amber-400 text-gray-900 px-6 py-3 rounded-xl font-bold disabled:opacity-40 transition-all duration-300 btn-press self-end"
+      >
+        {saving ? "..." : existingText ? "Оновити" : "Зберегти"}
+      </button>
     </div>
   );
 }
