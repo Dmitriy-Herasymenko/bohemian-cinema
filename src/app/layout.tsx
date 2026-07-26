@@ -3,6 +3,7 @@ import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { AuthProvider } from "@/components/AuthContext";
 import { LoadingProvider } from "@/components/LoadingContext";
+import { PushManager } from "@/components/PushManager";
 
 export const metadata: Metadata = {
   title: "Bohemian Cinema",
@@ -29,6 +30,7 @@ export default function RootLayout({
         </div>
         <LoadingProvider>
           <AuthProvider>
+            <PushManager />
             <Navbar />
             <main className="relative max-w-6xl mx-auto px-4 py-8 pb-20">{children}</main>
           </AuthProvider>

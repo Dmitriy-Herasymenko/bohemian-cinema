@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { slugify } from "@/lib/slug";
+import { notifyNewMovie } from "@/lib/notifications";
 
 export async function GET() {
   const session = await getSession();
@@ -54,7 +55,10 @@ export async function POST(request: Request) {
       trailerUrl: trailerUrl || null,
       createdById: session.userId,
     },
+    include: { createdBy: { select: { name: true } } },
   });
+
+  notifyNewMovie(title, movie.createdBy?.name || "Хтось", slug).catch(() => {});
 
   return NextResponse.json(movie);
 }

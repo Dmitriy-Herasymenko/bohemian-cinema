@@ -18,6 +18,7 @@ model User {
   comments   Comment[]
   parties    PartyMember[]
   createdMovies Movie[]
+  pushSubscriptions PushSubscription[]
 }
 
 model Party {
@@ -77,4 +78,14 @@ model Comment {
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
