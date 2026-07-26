@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -21,8 +21,9 @@ model Movie {
   title       String
   year        Int?
   poster      String?
+  trailerUrl  String?
   description String?
-  status      String   @default("watched") // watched, upcoming
+  status      String   @default("watched")
   createdAt   DateTime @default(now())
   votes       Vote[]
   comments    Comment[]
@@ -32,7 +33,7 @@ model Vote {
   id        String @id @default(uuid())
   userId    String
   movieId   String
-  rating    Int    // 1-10
+  rating    Int
   user      User   @relation(fields: [userId], references: [id])
   movie     Movie  @relation(fields: [movieId], references: [id])
 

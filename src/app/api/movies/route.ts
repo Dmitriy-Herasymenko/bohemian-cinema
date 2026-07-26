@@ -5,20 +5,16 @@ export async function GET() {
   const movies = await prisma.movie.findMany({
     include: {
       votes: true,
-      comments: {
-        include: { user: true },
-        orderBy: { createdAt: "desc" },
-      },
+      comments: { include: { user: true }, orderBy: { createdAt: "desc" } },
     },
     orderBy: { createdAt: "desc" },
   });
 
   const moviesWithRating = movies.map((movie) => ({
     ...movie,
-    avgRating:
-      movie.votes.length > 0
-        ? movie.votes.reduce((sum, v) => sum + v.rating, 0) / movie.votes.length
-        : 0,
+    avgRating: movie.votes.length > 0
+      ? movie.votes.reduce((sum, v) => sum + v.rating, 0) / movie.votes.length
+      : 0,
     totalVotes: movie.votes.length,
   }));
 
@@ -27,14 +23,15 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { title, year, description, poster, status } = body;
+  const { title, year, description, poster, trailerUrl, status } = body;
 
   const movie = await prisma.movie.create({
     data: {
       title,
       year: year ? parseInt(year) : null,
       description,
-      poster,
+      poster: poster || null,
+      trailerUrl: trailerUrl || null,
       status: status || "watched",
     },
   });
