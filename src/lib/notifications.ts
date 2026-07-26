@@ -7,20 +7,29 @@ function ensureVapid() {
   if (vapidConfigured) return true;
   const pub = process.env.VAPID_PUBLIC_KEY;
   const priv = process.env.VAPID_PRIVATE_KEY;
-  if (!pub || !priv) return false;
-  webPush.setVapidDetails(
-    process.env.VAPID_EMAIL || "mailto:bohemian-cinema@example.com",
-    pub,
-    priv
-  );
-  vapidConfigured = true;
-  return true;
+  if (!pub || !priv) {
+    console.error("[Push] Missing VAPID env vars");
+    return false;
+  }
+  try {
+    webPush.setVapidDetails(
+      process.env.VAPID_EMAIL || "mailto:bohemian-cinema@example.com",
+      pub,
+      priv
+    );
+    vapidConfigured = true;
+    return true;
+  } catch (err) {
+    console.error("[Push] VAPID setup error:", err);
+    return false;
+  }
 }
 
 export async function notifyNewMovie(movieTitle: string, creatorName: string, movieSlug: string | null) {
   if (!ensureVapid()) return;
 
   const subscriptions = await prisma.pushSubscription.findMany();
+  console.log(`[Push] Found ${subscriptions.length} subscriptions, sending notifications...`);
   if (subscriptions.length === 0) return;
 
   const payload = JSON.stringify({
@@ -35,6 +44,7 @@ export async function notifyNewMovie(movieTitle: string, creatorName: string, mo
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
         payload
       ).catch((err) => {
+        console.error(`[Push] Failed for sub ${sub.id}:`, err.statusCode, err.message);
         if (err.statusCode === 404 || err.statusCode === 410) {
           return prisma.pushSubscription.deleteMany({ where: { id: sub.id } });
         }
@@ -43,5 +53,6 @@ export async function notifyNewMovie(movieTitle: string, creatorName: string, mo
     )
   );
 
+  console.log("[Push] Results:", results.map((r) => r.status));
   return results;
 }
