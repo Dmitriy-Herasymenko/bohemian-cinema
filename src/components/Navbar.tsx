@@ -22,6 +22,7 @@ export function Navbar() {
               ...(user ? [
                 { href: "/future-movies", label: "Майбутні", icon: "🔮" },
                 { href: "/movies", label: "Архів", icon: "🎬" },
+                { href: "/chat", label: "Чат", icon: "💬" },
               ] : []),
             ].map((link) => {
               const active = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));

@@ -19,6 +19,7 @@ model User {
   parties    PartyMember[]
   createdMovies Movie[]
   pushSubscriptions PushSubscription[]
+  chatMessages ChatMessage[]
   partyComments PartyComment[]
 }
 
@@ -102,4 +103,12 @@ model PartyComment {
   createdAt DateTime @default(now())
 
   @@unique([userId, partyId])
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  text      String
+  userId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
