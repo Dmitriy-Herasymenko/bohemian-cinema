@@ -24,9 +24,10 @@ export default function MoviesPage() {
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
 
   useEffect(() => {
-    fetch("/api/parties").then((r) => r.json()).then((parties: { id: string; title: string; date: string; members: Member[]; movies: (Omit<Movie, "party" | "partyMembers" | "avgRating" | "totalVotes"> & { votes: Vote[]; comments: Comment[] })[] }[]) => {
+    fetch("/api/parties").then((r) => r.json()).then((parties: { id: string; title: string; date: string; status: string; members: Member[]; movies: (Omit<Movie, "party" | "partyMembers" | "avgRating" | "totalVotes"> & { votes: Vote[]; comments: Comment[] })[] }[]) => {
       const all: Movie[] = [];
       for (const p of parties) {
+        if (p.status !== "past") continue;
         for (const m of p.movies) {
           all.push({
             ...m,

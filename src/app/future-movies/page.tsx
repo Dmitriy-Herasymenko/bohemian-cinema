@@ -26,7 +26,27 @@ export default function FutureMoviesPage() {
   const [loading, setLoading] = useState(false);
 
   const fetchMovies = () => {
-    fetch("/api/movies").then((r) => r.json()).then(setMovies);
+    Promise.all([
+      fetch("/api/movies").then((r) => r.json()),
+      fetch("/api/parties").then((r) => r.json()),
+    ]).then(([standalone, parties]) => {
+      const upcomingMovies: Movie[] = [];
+      for (const p of parties) {
+        if (p.status !== "upcoming") continue;
+        for (const m of p.movies) {
+          upcomingMovies.push({
+            id: m.id,
+            title: m.title,
+            year: m.year,
+            poster: m.poster,
+            trailerUrl: m.trailerUrl,
+            description: m.description,
+            party: { id: p.id, title: p.title },
+          });
+        }
+      }
+      setMovies([...standalone, ...upcomingMovies]);
+    });
   };
 
   useEffect(() => {
