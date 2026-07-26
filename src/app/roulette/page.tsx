@@ -21,11 +21,19 @@ export default function RoulettePage() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    fetch("/api/parties").then((r) => r.json()).then((parties: { status: string; title: string; movies: Movie[] }[]) => {
-      const upcoming = parties.find((p) => p.status === "upcoming");
-      if (upcoming) {
-        setAllMovies(upcoming.movies.map((m) => ({ ...m, party: { id: "upcoming", title: upcoming.title } })));
+    Promise.all([
+      fetch("/api/movies").then((r) => r.json()),
+      fetch("/api/parties").then((r) => r.json()),
+    ]).then(([standalone, parties]) => {
+      const upcomingMovies: Movie[] = [];
+      for (const p of parties) {
+        if (p.status !== "upcoming") continue;
+        for (const m of p.movies) {
+          upcomingMovies.push({ ...m, party: { id: p.id, title: p.title } });
+        }
       }
+      const all = [...standalone.map((m: Movie) => ({ ...m, party: null })), ...upcomingMovies];
+      setAllMovies(all);
     });
   }, []);
 

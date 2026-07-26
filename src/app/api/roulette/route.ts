@@ -2,12 +2,13 @@ import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const parties = await prisma.party.findMany({
-    where: { status: "upcoming" },
-    include: { movies: true },
-  });
+  const [standalone, upcomingParties] = await Promise.all([
+    prisma.movie.findMany({ where: { partyId: null } }),
+    prisma.party.findMany({ where: { status: "upcoming" }, include: { movies: true } }),
+  ]);
 
-  const movies = parties.flatMap((p) => p.movies);
+  const upcomingMovies = upcomingParties.flatMap((p) => p.movies);
+  const movies = [...standalone, ...upcomingMovies];
 
   if (movies.length === 0) {
     return NextResponse.json({ error: "No movies to choose from" }, { status: 404 });
