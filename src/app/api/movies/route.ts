@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
   const movies = await prisma.movie.findMany({
     include: {
-      votes: true,
+      votes: { include: { user: true } },
       comments: { include: { user: true }, orderBy: { createdAt: "desc" } },
     },
     orderBy: { createdAt: "desc" },
