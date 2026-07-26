@@ -1,16 +1,24 @@
 import { prisma } from "@/lib/db";
 import webPush from "web-push";
 
-if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+let vapidConfigured = false;
+
+function ensureVapid() {
+  if (vapidConfigured) return true;
+  const pub = process.env.VAPID_PUBLIC_KEY;
+  const priv = process.env.VAPID_PRIVATE_KEY;
+  if (!pub || !priv) return false;
   webPush.setVapidDetails(
     process.env.VAPID_EMAIL || "mailto:bohemian-cinema@example.com",
-    process.env.VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
+    pub,
+    priv
   );
+  vapidConfigured = true;
+  return true;
 }
 
 export async function notifyNewMovie(movieTitle: string, creatorName: string, movieSlug: string | null) {
-  if (!process.env.VAPID_PUBLIC_KEY) return;
+  if (!ensureVapid()) return;
 
   const subscriptions = await prisma.pushSubscription.findMany();
   if (subscriptions.length === 0) return;
