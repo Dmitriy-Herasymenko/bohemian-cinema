@@ -5,7 +5,7 @@ let vapidConfigured = false;
 
 function ensureVapid() {
   if (vapidConfigured) return true;
-  const pub = process.env.VAPID_PUBLIC_KEY;
+  const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const priv = process.env.VAPID_PRIVATE_KEY;
   if (!pub || !priv) {
     console.error("[Push] Missing VAPID env vars");
