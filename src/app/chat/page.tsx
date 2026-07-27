@@ -31,7 +31,7 @@ export default function ChatPage() {
 
   const fetchMessages = useCallback(async () => {
     try {
-      const res = await fetch("/api/chat");
+      const res = await fetch("/api/chat", { credentials: "same-origin" });
       if (res.ok) {
         const data = await res.json();
         setMessages(data);
@@ -60,6 +60,7 @@ export default function ChatPage() {
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
       });
