@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const normalizedPub = pub.replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
+    const normalizedPub = pub.trim().replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
     logs.push(`Normalized length: ${normalizedPub.length}`);
     logs.push(`Normalized last 10: "${normalizedPub.slice(-10)}"`);
     webPush.setVapidDetails(

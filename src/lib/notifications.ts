@@ -12,7 +12,7 @@ function ensureVapid() {
     return false;
   }
   try {
-    const normalizedPub = pub.replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
+    const normalizedPub = pub.trim().replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
     webPush.setVapidDetails(
       process.env.VAPID_EMAIL || "mailto:bohemian-cinema@example.com",
       normalizedPub,
