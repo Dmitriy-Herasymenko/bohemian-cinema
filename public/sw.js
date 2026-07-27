@@ -1,3 +1,5 @@
+self.addEventListener("fetch", (event) => {});
+
 self.addEventListener("push", (event) => {
   let data = { title: "Bohemian Cinema", body: "Нове кіно додано!" };
   try {
