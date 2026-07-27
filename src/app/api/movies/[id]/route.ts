@@ -51,7 +51,20 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { id } = await params;
+  const movie = await prisma.movie.findUnique({ where: { id }, select: { createdById: true } });
+  if (!movie) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (movie.createdById !== session.userId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   await prisma.comment.deleteMany({ where: { movieId: id } });
   await prisma.vote.deleteMany({ where: { movieId: id } });
   await prisma.movie.delete({ where: { id } });

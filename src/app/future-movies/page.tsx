@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ConfirmModal } from "@/components/ConfirmModal";
 
 interface Creator { id: string; name: string; avatar: string | null }
 interface Movie {
@@ -30,6 +31,7 @@ export default function FutureMoviesPage() {
   const [poster, setPoster] = useState("");
   const [trailerUrl, setTrailerUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const fetchMovies = () => {
     Promise.all([
@@ -91,9 +93,10 @@ export default function FutureMoviesPage() {
     fetchMovies();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Видалити фільм?")) return;
-    await fetch(`/api/movies/${id}`, { method: "DELETE" });
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    await fetch(`/api/movies/${deleteId}`, { method: "DELETE" });
+    setDeleteId(null);
     fetchMovies();
   };
 
@@ -246,9 +249,9 @@ export default function FutureMoviesPage() {
                     )}
                   </div>
                 </div>
-                {user && (
+                {user && movie.createdBy && user.userId === movie.createdBy.id && (
                   <button
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(movie.id); }}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeleteId(movie.id); }}
                     className="text-red-400/0 group-hover:text-red-400 text-xs transition-colors ml-4 btn-press shrink-0"
                   >
                     Видалити
@@ -260,6 +263,15 @@ export default function FutureMoviesPage() {
           })}
         </div>
       )}
+      <ConfirmModal
+        open={!!deleteId}
+        title="Видалити фільм?"
+        message="Це дію неможливо скасувати."
+        confirmLabel="Видалити"
+        danger
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   );
 }

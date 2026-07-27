@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { YouTubeEmbed } from "./MovieCard";
+import { ConfirmModal } from "./ConfirmModal";
 
 interface User { id: string; name: string; }
 interface Vote { userId: string; rating: number; user: { name: string }; }
@@ -25,6 +26,7 @@ export function MovieDetail({ movie, onBack, onUpdate }: { movie: Movie; onBack:
   const [rating, setRating] = useState<number>(7);
   const [commentText, setCommentText] = useState("");
   const [voteAnimation, setVoteAnimation] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("currentUser");
@@ -56,8 +58,8 @@ export function MovieDetail({ movie, onBack, onUpdate }: { movie: Movie; onBack:
   };
 
   const handleDelete = async () => {
-    if (!confirm("Видалити фільм?")) return;
     await fetch(`/api/movies/${movie.id}`, { method: "DELETE" });
+    setShowDelete(false);
     onBack();
   };
 
@@ -195,11 +197,21 @@ export function MovieDetail({ movie, onBack, onUpdate }: { movie: Movie; onBack:
       </div>
 
       <div className="flex justify-end">
-        <button onClick={handleDelete}
+        <button onClick={() => setShowDelete(true)}
           className="text-red-400/60 hover:text-red-400 text-sm transition-colors btn-press">
           Видалити фільм
         </button>
       </div>
+
+      <ConfirmModal
+        open={showDelete}
+        title="Видалити фільм?"
+        message="Це дію неможливо скасувати."
+        confirmLabel="Видалити"
+        danger
+        onConfirm={handleDelete}
+        onCancel={() => setShowDelete(false)}
+      />
     </div>
   );
 }

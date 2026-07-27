@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
 import Link from "next/link";
+import { ConfirmModal } from "@/components/ConfirmModal";
 
 interface Creator { id: string; name: string; avatar: string | null }
 interface Party { id: string; title: string; date: string }
@@ -24,11 +25,13 @@ interface Movie {
 export default function MovieSlugPage() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
+  const router = useRouter();
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [rating, setRating] = useState(7);
   const [commentText, setCommentText] = useState("");
   const [voteError, setVoteError] = useState("");
+  const [showDelete, setShowDelete] = useState(false);
 
   const fetchMovie = async () => {
     const res = await fetch(`/api/movies/slug/${slug}`);
@@ -48,6 +51,14 @@ export default function MovieSlugPage() {
   const existingVote = movie?.votes.find((v) => v.user.id === user?.userId);
   const partyIsPast = movie?.party && new Date(movie.party.date) < new Date();
   const canVote = isMember && !existingVote && partyIsPast;
+  const isCreator = user && movie && movie.createdBy?.id === user.userId;
+
+  const handleDelete = async () => {
+    if (!movie) return;
+    await fetch(`/api/movies/${movie.id}`, { method: "DELETE" });
+    setShowDelete(false);
+    router.push(movie.party ? "/movies" : "/future-movies");
+  };
 
   const handleVote = async () => {
     if (!movie) return;
@@ -216,6 +227,25 @@ export default function MovieSlugPage() {
           </button>
         </div>
       </div>
+
+      {isCreator && (
+        <div className="flex justify-end">
+          <button onClick={() => setShowDelete(true)}
+            className="text-red-400/60 hover:text-red-400 text-sm transition-colors btn-press">
+            Видалити фільм
+          </button>
+        </div>
+      )}
+
+      <ConfirmModal
+        open={showDelete}
+        title="Видалити фільм?"
+        message="Це дію неможливо скасувати."
+        confirmLabel="Видалити"
+        danger
+        onConfirm={handleDelete}
+        onCancel={() => setShowDelete(false)}
+      />
     </div>
   );
 }
