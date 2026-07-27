@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthContext";
+import { PushEnableButton } from "@/components/PushManager";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -42,6 +43,7 @@ export function Navbar() {
           {!loading && (
             user ? (
               <div className="flex items-center gap-3">
+                <PushEnableButton />
                 <Link href={`/profile/${user.userId}`}
                   className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-surface-hover transition-colors">
                   {user.avatar ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useAuth } from "@/components/AuthContext";
 
 const VAPID_PUBLIC_KEY = "BGEsTWpsZ1qNNl8g3N5tiHJu7GW0faTNc2QRxa4eZpwy4HK7k5P6acQaRbDey767A_SUnX_jwNT6lktUSzjoKKs";
@@ -16,81 +16,71 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
+async function subscribePush(userId: string) {
+  if (!("serviceWorker" in navigator)) return;
+  if (!("PushManager" in window)) return;
+
+  const swReg = await navigator.serviceWorker.register("/sw.js");
+  await navigator.serviceWorker.ready;
+
+  const existing = await swReg.pushManager.getSubscription();
+  if (existing) {
+    await existing.unsubscribe().catch(() => {});
+  }
+
+  const subscription = await swReg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+  });
+
+  const subJson = subscription.toJSON();
+  await fetch("/api/push/subscribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      endpoint: subJson.endpoint,
+      p256dh: subJson.keys?.p256dh,
+      auth: subJson.keys?.auth,
+    }),
+  });
+  console.log("[Push] Subscribed for user", userId);
+}
+
 export function usePushNotifications() {
   const { user } = useAuth();
-  const prevUserIdRef = useRef<string | null>(null);
+  const [permissionState, setPermissionState] = useState<NotificationPermission>("default");
+  const [subscribed, setSubscribed] = useState(false);
 
   useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
-    if (!("PushManager" in window)) return;
-    if (!VAPID_PUBLIC_KEY) return;
+    if (!user) return;
+    if (!("Notification" in window)) return;
 
-    const prevUserId = prevUserIdRef.current;
-    const currentUserId = user?.userId ?? null;
-    prevUserIdRef.current = currentUserId;
+    const perm = Notification.permission;
+    setPermissionState(perm);
 
-    if (!currentUserId) {
-      if (prevUserId) {
-        navigator.serviceWorker.ready.then((reg) => {
-          reg.pushManager.getSubscription().then((sub) => {
-            if (sub) {
-              sub.unsubscribe().catch(() => {});
-              fetch("/api/push/unsubscribe", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ endpoint: sub.endpoint }),
-              }).catch(() => {});
-            }
-          });
-        });
-      }
-      return;
+    if (perm === "granted") {
+      subscribePush(user.userId)
+        .then(() => setSubscribed(true))
+        .catch((err) => console.error("[Push] Auto-subscribe error:", err));
     }
-
-    let cancelled = false;
-
-    const run = async () => {
-      try {
-        const swReg = await navigator.serviceWorker.register("/sw.js");
-        await navigator.serviceWorker.ready;
-
-        const existing = await swReg.pushManager.getSubscription();
-        if (existing) {
-          console.log("[Push] Unsubscribing old subscription...");
-          await existing.unsubscribe().catch(() => {});
-        }
-
-        const permission = await Notification.requestPermission();
-        if (permission !== "granted") {
-          console.log("[Push] Permission not granted:", permission);
-          return;
-        }
-
-        console.log("[Push] Creating fresh push subscription...");
-        const subscription = await swReg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-        });
-
-        const subJson = subscription.toJSON();
-        const res = await fetch("/api/push/subscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            endpoint: subJson.endpoint,
-            p256dh: subJson.keys?.p256dh,
-            auth: subJson.keys?.auth,
-          }),
-        });
-        const data = await res.json();
-        console.log("[Push] New subscription created for user", currentUserId, "| API:", res.status, data);
-      } catch (err) {
-        if (!cancelled) console.error("[Push] Error:", err);
-      }
-    };
-
-    run();
-
-    return () => { cancelled = true; };
   }, [user]);
+
+  const enableNotifications = useCallback(async () => {
+    if (!user) return false;
+    try {
+      const perm = await Notification.requestPermission();
+      setPermissionState(perm);
+      if (perm === "granted") {
+        await subscribePush(user.userId);
+        setSubscribed(true);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("[Push] Enable error:", err);
+      return false;
+    }
+  }, [user]);
+
+  return { permissionState, subscribed, enableNotifications };
 }
