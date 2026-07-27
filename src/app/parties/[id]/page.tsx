@@ -53,12 +53,44 @@ export default function PartyDetailPage() {
       onBack={() => setSelectedMovieId(null)} onUpdate={fetchParty} />;
   }
 
+  const removeMember = (userId: string) => {
+    setConfirm({
+      title: "Видалити учасника?",
+      message: "Учасник буде видалений з п'янки.",
+      danger: true,
+      onConfirm: () => {
+        fetch(`/api/parties/${party.id}/members`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId }),
+        }).then(() => fetchParty());
+        setConfirm(null);
+      },
+    });
+  };
+
+  const deleteMovie = (movieId: string) => {
+    setConfirm({
+      title: "Видалити фільм з п'янки?",
+      message: "Фільм повернеться до списку майбутніх.",
+      danger: true,
+      onConfirm: () => {
+        fetch(`/api/movies/${movieId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ partyId: null }),
+        }).then(() => fetchParty());
+        setConfirm(null);
+      },
+    });
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       <Link href="/parties" className="text-amber-400 hover:text-amber-300 transition-colors">← Назад</Link>
 
       {isUpcoming && isMember ? (
-        <EditPartyHeader party={party as Party} allUsers={allUsers} onUpdate={fetchParty} />
+        <EditPartyHeader party={party} allUsers={allUsers} onUpdate={fetchParty} />
       ) : (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -176,171 +208,6 @@ export default function PartyDetailPage() {
           </div>
         )}
       </div>
-    </div>
-  );
-
-  function removeMember(userId: string) {
-    if (!party) return;
-    setConfirm({
-      title: "Видалити учасника?",
-      message: "Учасник буде видалений з п'янки.",
-      danger: true,
-      onConfirm: () => {
-        fetch(`/api/parties/${party.id}/members`, {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId }),
-        }).then(() => fetchParty());
-        setConfirm(null);
-      },
-    });
-  }
-
-  function deleteMovie(movieId: string) {
-    setConfirm({
-      title: "Видалити фільм з п'янки?",
-      message: "Фільм повернеться до списку майбутніх.",
-      danger: true,
-      onConfirm: () => {
-        fetch(`/api/movies/${movieId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ partyId: null }),
-        }).then(() => fetchParty());
-        setConfirm(null);
-      },
-    });
-  }
-
-  return (
-    <div className="space-y-8 animate-fade-in">
-      <Link href="/parties" className="text-amber-400 hover:text-amber-300 transition-colors">← Назад</Link>
-
-      {isUpcoming && isMember ? (
-        <EditPartyHeader party={party} allUsers={allUsers} onUpdate={fetchParty} />
-      ) : (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black tracking-tight flex items-center gap-3">
-              <span className="text-amber-400">🍻</span> {party.title}
-            </h1>
-            <p className="text-gray-500 mt-1">
-              {new Date(party.date).toLocaleDateString("uk-UA", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-            </p>
-            {party.description && <p className="text-gray-400 mt-2">{party.description}</p>}
-          </div>
-          {isPast && <span className="bg-gray-500/10 text-gray-500 px-4 py-2 rounded-xl text-sm font-medium">Завершено</span>}
-        </div>
-      )}
-
-      {/* Members */}
-      <div className="glass-card rounded-2xl p-6">
-        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-          <span>👥</span> Учасники ({party.members.length})
-        </h2>
-        <div className="flex flex-wrap gap-3">
-          {party.members.map((m) => (
-            <Link key={m.user.id} href={`/profile/${m.user.id}`}
-              className="flex items-center gap-2 bg-surface-hover border border-border rounded-xl px-4 py-2 hover:border-amber-400/30 transition-colors group">
-              {m.user.avatar ? (
-                <img src={m.user.avatar} alt="" className="w-8 h-8 rounded-full object-cover" />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-amber-400/20 flex items-center justify-center text-amber-400 text-sm font-bold">{m.user.name[0]}</div>
-              )}
-              <span className="text-gray-300">{m.user.name}</span>
-              {isUpcoming && isMember && (
-                <button onClick={(e) => { e.preventDefault(); removeMember(m.user.id); }}
-                  className="text-red-400/0 group-hover:text-red-400 text-xs transition-colors ml-1">✕</button>
-              )}
-            </Link>
-          ))}
-        </div>
-        {isUpcoming && isMember && (
-          <AddMemberSection partyId={party.id} allUsers={allUsers} currentMembers={party.members.map((m) => m.user.id)} onUpdate={fetchParty} />
-        )}
-      </div>
-
-      {/* Party Notes / Comments */}
-      <div className="glass-card rounded-2xl p-6">
-        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-          <span>📝</span> Нотатки учасників
-        </h2>
-        {party.comments.length > 0 && (
-          <div className="space-y-3 mb-4">
-            {party.comments.map((c) => (
-              <div key={c.id} className="bg-surface-hover/50 rounded-xl p-4 border border-border/50">
-                <div className="flex items-center gap-2 mb-2">
-                  <Link href={`/profile/${c.user.id}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                    {c.user.avatar ? (
-                      <img src={c.user.avatar} alt="" className="w-7 h-7 rounded-full object-cover" />
-                    ) : (
-                      <div className="w-7 h-7 rounded-full bg-amber-400/20 flex items-center justify-center text-amber-400 text-xs font-bold">{c.user.name[0]}</div>
-                    )}
-                    <span className="font-semibold text-amber-400 text-sm">{c.user.name}</span>
-                  </Link>
-                  <span className="text-gray-700 text-xs">{new Date(c.createdAt).toLocaleDateString("uk-UA")}</span>
-                </div>
-                <p className="text-gray-300">{c.text}</p>
-              </div>
-            ))}
-          </div>
-        )}
-        {isMember && user && (
-          <PartyCommentForm partyId={party.id} onUpdate={fetchParty} existingText={party.comments.find((c) => c.user.id === user.userId)?.text || ""} />
-        )}
-      </div>
-
-      {/* Movies */}
-      <div>
-        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-          <span>🎬</span> Фільми ({party.movies.length})
-        </h2>
-        {party.movies.length === 0 ? (
-          <p className="text-gray-600">Ще немає фільмів</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 stagger-children">
-            {party.movies.map((movie) => {
-              const avg = movie.votes.length > 0 ? movie.votes.reduce((s, v) => s + v.rating, 0) / movie.votes.length : 0;
-              return (
-                <div key={movie.id} className="glass-card rounded-2xl overflow-hidden group relative">
-                  <button onClick={() => setSelectedMovieId(movie.id)} className="text-left w-full">
-                    {movie.poster ? (
-                      <div className="relative h-56 overflow-hidden">
-                        <img src={movie.poster} alt={movie.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-surface-card via-surface-card/30 to-transparent" />
-                        {avg > 0 && <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-amber-400 font-black px-3 py-1 rounded-xl">{avg.toFixed(1)}</div>}
-                      </div>
-                    ) : (
-                      <div className="h-56 bg-surface-hover flex items-center justify-center text-5xl group-hover:scale-110 transition-transform duration-700">🎬</div>
-                    )}
-                    <div className="p-4">
-                      <h3 className="font-bold truncate">{movie.title}{movie.year && <span className="text-gray-600 ml-1 text-sm font-normal">({movie.year})</span>}</h3>
-                      <p className="text-gray-500 text-sm mt-1">{movie.votes.length} голосів</p>
-                    </div>
-                  </button>
-                  {isUpcoming && isMember && (
-                    <button onClick={() => deleteMovie(movie.id)}
-                      className="absolute top-3 left-3 bg-red-500/80 hover:bg-red-500 text-white text-xs px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-all btn-press">
-                      Видалити
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      <ConfirmModal
-        open={!!confirm}
-        title={confirm?.title || ""}
-        message={confirm?.message || ""}
-        confirmLabel="Так"
-        cancelLabel="Ні"
-        danger={confirm?.danger}
-        onConfirm={() => confirm?.onConfirm()}
-        onCancel={() => setConfirm(null)}
-      />
     </div>
   );
 }
