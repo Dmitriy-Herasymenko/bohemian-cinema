@@ -12,10 +12,10 @@ export async function POST(request: Request) {
     console.log("[Push Subscribe] userId:", session.userId, "endpoint:", endpoint?.substring(0, 50), "hasKeys:", !!p256dh, !!auth);
     if (!endpoint || !p256dh || !auth) return NextResponse.json({ error: "Invalid subscription", received: { endpoint: !!endpoint, p256dh: !!p256dh, auth: !!auth } }, { status: 400 });
 
-    await prisma.pushSubscription.upsert({
-      where: { endpoint },
-      update: { userId: session.userId, p256dh, auth },
-      create: { userId: session.userId, endpoint, p256dh, auth },
+    await prisma.pushSubscription.deleteMany({ where: { userId: session.userId } });
+
+    await prisma.pushSubscription.create({
+      data: { userId: session.userId, endpoint, p256dh, auth },
     });
 
     return NextResponse.json({ ok: true });

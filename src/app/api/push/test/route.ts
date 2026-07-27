@@ -28,12 +28,13 @@ export async function POST(request: Request) {
   try {
     const normalizedPub = pub.trim().replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
     const normalizedPriv = priv.trim().replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
+    const email = process.env.VAPID_EMAIL || "mailto:shiningxors@gmail.com";
     webPush.setVapidDetails(
-      process.env.VAPID_EMAIL || "mailto:shiningxors@gmail.com",
+      email,
       normalizedPub,
       normalizedPriv
     );
-    logs.push("VAPID configured OK");
+    logs.push(`VAPID OK, email: "${email}"`);
   } catch (err: any) {
     logs.push(`VAPID setup error: ${err.message}`);
     return NextResponse.json({ logs });
