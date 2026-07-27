@@ -1,5 +1,14 @@
 self.addEventListener("push", (event) => {
-  const data = event.data?.json() || { title: "Bohemian Cinema", body: "Нове кіно додано!" };
+  let data = { title: "Bohemian Cinema", body: "Нове кіно додано!" };
+  try {
+    if (event.data) {
+      data = event.data.json();
+    }
+  } catch (e) {
+    try {
+      data = { title: "Bohemian Cinema", body: event.data.text() };
+    } catch (e2) {}
+  }
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
