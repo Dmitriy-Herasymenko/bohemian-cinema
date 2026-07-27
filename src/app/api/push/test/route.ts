@@ -26,9 +26,10 @@ export async function POST(request: Request) {
   }
 
   try {
+    const normalizedPub = pub.replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
     webPush.setVapidDetails(
       email || "mailto:bohemian-cinema@example.com",
-      pub,
+      normalizedPub,
       priv
     );
     logs.push("VAPID configured OK");
