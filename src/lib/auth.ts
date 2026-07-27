@@ -7,6 +7,7 @@ export interface SessionPayload {
   userId: string;
   email: string;
   name: string;
+  gender?: string;
 }
 
 export function signToken(payload: SessionPayload): string {

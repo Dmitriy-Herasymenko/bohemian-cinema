@@ -55,10 +55,10 @@ export async function POST(request: Request) {
       trailerUrl: trailerUrl || null,
       createdById: session.userId,
     },
-    include: { createdBy: { select: { name: true } } },
+    include: { createdBy: { select: { name: true, gender: true } } },
   });
 
-  notifyNewMovie(title, movie.createdBy?.name || "Хтось", slug).catch(() => {});
+  notifyNewMovie(title, movie.createdBy?.name || "Хтось", slug, movie.createdBy?.gender || undefined).catch(() => {});
 
   return NextResponse.json(movie);
 }

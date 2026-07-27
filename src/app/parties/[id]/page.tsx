@@ -15,7 +15,7 @@ interface Movie {
   trailerUrl: string | null; description: string | null;
   avgRating: number; votes: Vote[]; comments: Comment[];
 }
-interface PartyComment { id: string; text: string; user: { id: string; name: string; avatar: string | null }; createdAt: string; }
+interface PartyComment { id: string; text: string; image: string | null; user: { id: string; name: string; avatar: string | null; gender: string }; createdAt: string; }
 interface Party {
   id: string; title: string; date: string; status: string; description: string | null;
   members: { user: User }[];
@@ -150,16 +150,23 @@ export default function PartyDetailPage() {
                       <div className="w-7 h-7 rounded-full bg-amber-400/20 flex items-center justify-center text-amber-400 text-xs font-bold">{c.user.name[0]}</div>
                     )}
                     <span className="font-semibold text-amber-400 text-sm">{c.user.name}</span>
+                    <span className="text-gray-600 text-xs">{c.user.gender === "female" ? "👩" : "👨"}</span>
                   </Link>
                   <span className="text-gray-700 text-xs">{new Date(c.createdAt).toLocaleDateString("uk-UA")}</span>
                 </div>
-                <p className="text-gray-300">{c.text}</p>
+                {c.text && <p className="text-gray-300">{c.text}</p>}
+                {c.image && (
+                  <img src={c.image} alt="" className="mt-2 rounded-xl max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => window.open(c.image!, "_blank")} />
+                )}
               </div>
             ))}
           </div>
         )}
         {isMember && user && (
-          <PartyCommentForm partyId={party.id} onUpdate={fetchParty} existingText={party.comments.find((c) => c.user.id === user.userId)?.text || ""} />
+          <PartyCommentForm partyId={party.id} onUpdate={fetchParty}
+            existingText={party.comments.find((c) => c.user.id === user.userId)?.text || ""}
+            existingImage={party.comments.find((c) => c.user.id === user.userId)?.image || null} />
         )}
       </div>
 
@@ -497,37 +504,61 @@ function MovieInParty({ movie, isMember, user, onBack, onUpdate }: {
 }
 
 
-function PartyCommentForm({ partyId, onUpdate, existingText }: { partyId: string; onUpdate: () => void; existingText: string }) {
+function PartyCommentForm({ partyId, onUpdate, existingText, existingImage }: { partyId: string; onUpdate: () => void; existingText: string; existingImage?: string | null }) {
   const [text, setText] = useState(existingText);
+  const [image, setImage] = useState<string | null>(existingImage || null);
   const [saving, setSaving] = useState(false);
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { alert("Максимум 2MB"); return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => setImage(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
   const handleSave = async () => {
-    if (!text.trim()) return;
+    if (!text.trim() && !image) return;
     setSaving(true);
     await fetch("/api/party-comments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ partyId, text }),
+      body: JSON.stringify({ partyId, text, image }),
     });
     setSaving(false);
+    setImage(null);
     onUpdate();
   };
 
   return (
-    <div className="flex gap-3">
-      <textarea
-        placeholder={existingText ? "Оновити нотатку..." : "Твоя нотатка про зустріч..."}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        className="flex-1 bg-surface-input border border-border rounded-xl px-5 py-3 focus:outline-none focus:border-amber-400 transition-colors h-16 resize-none"
-      />
-      <button
-        onClick={handleSave}
-        disabled={saving || !text.trim()}
-        className="bg-gradient-to-r from-amber-500 to-amber-400 text-gray-900 px-6 py-3 rounded-xl font-bold disabled:opacity-40 transition-all duration-300 btn-press self-end"
-      >
-        {saving ? "..." : existingText ? "Оновити" : "Зберегти"}
-      </button>
+    <div className="space-y-3">
+      {image && (
+        <div className="relative inline-block">
+          <img src={image} alt="" className="rounded-xl max-h-40 object-cover" />
+          <button onClick={() => setImage(null)}
+            className="absolute top-1 right-1 bg-red-500/80 hover:bg-red-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center">✕</button>
+        </div>
+      )}
+      <div className="flex gap-3">
+        <label className="shrink-0 bg-surface-hover border border-border rounded-xl px-3 py-3 cursor-pointer hover:border-amber-400/30 transition-colors text-amber-400">
+          📷
+          <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+        </label>
+        <textarea
+          placeholder={existingText ? "Оновити нотатку..." : "Твоя нотатка про зустріч..."}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          className="flex-1 bg-surface-input border border-border rounded-xl px-5 py-3 focus:outline-none focus:border-amber-400 transition-colors h-16 resize-none"
+        />
+        <button
+          onClick={handleSave}
+          disabled={saving || (!text.trim() && !image)}
+          className="bg-gradient-to-r from-amber-500 to-amber-400 text-gray-900 px-6 py-3 rounded-xl font-bold disabled:opacity-40 transition-all duration-300 btn-press self-end"
+        >
+          {saving ? "..." : existingText ? "Оновити" : "Зберегти"}
+        </button>
+      </div>
     </div>
   );
 }

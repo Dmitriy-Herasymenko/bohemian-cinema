@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     include: { user: { select: { id: true, name: true, avatar: true } } },
   });
 
-  notifyChatMessage(session.name, text.trim(), session.userId).catch(() => {});
+  notifyChatMessage(session.name, text.trim(), session.userId, session.gender).catch(() => {});
 
   return NextResponse.json(message);
 }

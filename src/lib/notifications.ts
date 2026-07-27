@@ -25,16 +25,17 @@ function ensureVapid() {
   }
 }
 
-export async function notifyNewMovie(movieTitle: string, creatorName: string, movieSlug: string | null) {
+export async function notifyNewMovie(movieTitle: string, creatorName: string, movieSlug: string | null, creatorGender?: string) {
   if (!ensureVapid()) return;
 
   const subscriptions = await prisma.pushSubscription.findMany();
   console.log(`[Push] Found ${subscriptions.length} subscriptions, sending notifications...`);
   if (subscriptions.length === 0) return;
 
+  const genderLabel = creatorGender === "female" ? "👩" : "👨";
   const payload = JSON.stringify({
     title: "🍿 Нове кіно!",
-    body: `${creatorName} додав(ла) "${movieTitle}"`,
+    body: `${genderLabel} ${creatorName} додав "${movieTitle}"`,
     url: movieSlug ? `/movies/${movieSlug}` : "/future-movies",
   });
 
@@ -57,7 +58,7 @@ export async function notifyNewMovie(movieTitle: string, creatorName: string, mo
   return results;
 }
 
-export async function notifyChatMessage(senderName: string, text: string, senderId: string) {
+export async function notifyChatMessage(senderName: string, text: string, senderId: string, senderGender?: string) {
   if (!ensureVapid()) return;
 
   const subscriptions = await prisma.pushSubscription.findMany({
@@ -66,9 +67,10 @@ export async function notifyChatMessage(senderName: string, text: string, sender
   console.log(`[Push] Chat: sending to ${subscriptions.length} subscriptions (excluding sender)`);
   if (subscriptions.length === 0) return;
 
+  const genderLabel = senderGender === "female" ? "👩" : "👨";
   const truncated = text.length > 80 ? text.slice(0, 80) + "…" : text;
   const payload = JSON.stringify({
-    title: `💬 ${senderName}`,
+    title: `${genderLabel} ${senderName}`,
     body: truncated,
     url: "/chat",
   });

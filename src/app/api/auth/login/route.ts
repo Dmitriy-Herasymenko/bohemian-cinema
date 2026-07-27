@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Невірний email або пароль" }, { status: 401 });
   }
 
-  const token = signToken({ userId: user.id, email: user.email, name: user.name });
+  const token = signToken({ userId: user.id, email: user.email, name: user.name, gender: user.gender });
 
   const response = NextResponse.json({ user: { id: user.id, name: user.name, email: user.email } });
   const isSecure = process.env.NODE_ENV === "production";

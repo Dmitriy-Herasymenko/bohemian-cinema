@@ -5,7 +5,7 @@ import { signToken } from "@/lib/auth";
 
 export async function POST(request: Request) {
   const body = await request.json();
-  const { name, email, password } = body;
+  const { name, email, password, gender } = body;
 
   if (!name || !email || !password) {
     return NextResponse.json({ error: "Всі поля обов'язкові" }, { status: 400 });
@@ -18,10 +18,10 @@ export async function POST(request: Request) {
 
   const hashed = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
-    data: { name, email, password: hashed },
+    data: { name, email, password: hashed, gender: gender === "female" ? "female" : "male" },
   });
 
-  const token = signToken({ userId: user.id, email: user.email, name: user.name });
+  const token = signToken({ userId: user.id, email: user.email, name: user.name, gender: user.gender });
 
   const response = NextResponse.json({ user: { id: user.id, name: user.name, email: user.email } });
   const isSecure = process.env.NODE_ENV === "production";

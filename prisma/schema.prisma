@@ -13,6 +13,7 @@ model User {
   email      String   @unique
   password   String
   avatar     String?
+  gender     String   @default("male")
   createdAt  DateTime @default(now())
   votes      Vote[]
   comments   Comment[]
@@ -96,6 +97,7 @@ model PushSubscription {
 model PartyComment {
   id        String   @id @default(uuid())
   text      String
+  image     String?
   userId    String
   partyId   String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

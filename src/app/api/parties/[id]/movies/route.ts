@@ -46,10 +46,10 @@ export async function POST(
       partyId: id,
       createdById: session.userId,
     },
-    include: { createdBy: { select: { name: true } } },
+    include: { createdBy: { select: { name: true, gender: true } } },
   });
 
-  notifyNewMovie(title, movie.createdBy?.name || "Хтось", slug).catch(() => {});
+  notifyNewMovie(title, movie.createdBy?.name || "Хтось", slug, movie.createdBy?.gender || undefined).catch(() => {});
 
   return NextResponse.json(movie);
 }
