@@ -6,14 +6,19 @@ export async function POST(request: Request) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { endpoint, p256dh, auth } = await request.json();
-  if (!endpoint || !p256dh || !auth) return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
+  try {
+    const { endpoint, p256dh, auth } = await request.json();
+    if (!endpoint || !p256dh || !auth) return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
 
-  await prisma.pushSubscription.deleteMany({ where: { endpoint } });
+    await prisma.pushSubscription.deleteMany({ where: { endpoint } });
 
-  await prisma.pushSubscription.create({
-    data: { userId: session.userId, endpoint, p256dh, auth },
-  });
+    await prisma.pushSubscription.create({
+      data: { userId: session.userId, endpoint, p256dh, auth },
+    });
 
-  return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true });
+  } catch (err: any) {
+    console.error("[Push Subscribe] Error:", err?.message, err?.code);
+    return NextResponse.json({ error: err?.message || "Internal error" }, { status: 500 });
+  }
 }
