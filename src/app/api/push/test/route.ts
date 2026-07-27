@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     const normalizedPub = pub.trim().replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
     const normalizedPriv = priv.trim().replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
     webPush.setVapidDetails(
-      process.env.VAPID_EMAIL || "mailto:bohemian-cinema@example.com",
+      process.env.VAPID_EMAIL || "mailto:shiningxors@gmail.com",
       normalizedPub,
       normalizedPriv
     );
