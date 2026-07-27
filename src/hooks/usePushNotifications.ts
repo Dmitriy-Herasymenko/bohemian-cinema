@@ -26,7 +26,7 @@ export function usePushNotifications() {
     if (!VAPID_PUBLIC_KEY) return;
 
     const prevUserId = prevUserIdRef.current;
-    const currentUserId = user?.id ?? null;
+    const currentUserId = user?.userId ?? null;
     prevUserIdRef.current = currentUserId;
 
     if (!currentUserId) {

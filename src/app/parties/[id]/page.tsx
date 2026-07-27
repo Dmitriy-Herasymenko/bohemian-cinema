@@ -527,6 +527,7 @@ function PartyCommentForm({ partyId, onUpdate, existingText, existingImage }: { 
       body: JSON.stringify({ partyId, text, image }),
     });
     setSaving(false);
+    setText("");
     setImage(null);
     onUpdate();
   };
