@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/components/AuthContext";
 
 const VAPID_PUBLIC_KEY = "BGEsTWpsZ1qNNl8g3N5tiHJu7GW0faTNc2QRxa4eZpwy4HK7k5P6acQaRbDey767A_SUnX_jwNT6lktUSzjoKKs";
@@ -18,26 +18,46 @@ function urlBase64ToUint8Array(base64String: string) {
 
 export function usePushNotifications() {
   const { user } = useAuth();
+  const prevUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!user) return;
-    if (!("serviceWorker" in navigator)) { console.log("[Push] No serviceWorker support"); return; }
-    if (!("PushManager" in window)) { console.log("[Push] No PushManager support"); return; }
-    if (!VAPID_PUBLIC_KEY) { console.log("[Push] No VAPID key"); return; }
+    if (!("serviceWorker" in navigator)) return;
+    if (!("PushManager" in window)) return;
+    if (!VAPID_PUBLIC_KEY) return;
 
-    let swReg: ServiceWorkerRegistration;
+    const prevUserId = prevUserIdRef.current;
+    const currentUserId = user?.id ?? null;
+    prevUserIdRef.current = currentUserId;
+
+    if (!currentUserId) {
+      if (prevUserId) {
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.pushManager.getSubscription().then((sub) => {
+            if (sub) {
+              sub.unsubscribe().catch(() => {});
+              fetch("/api/push/unsubscribe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ endpoint: sub.endpoint }),
+              }).catch(() => {});
+            }
+          });
+        });
+      }
+      return;
+    }
+
+    let cancelled = false;
 
     const run = async () => {
       try {
-        console.log("[Push] Registering service worker...");
-        swReg = await navigator.serviceWorker.register("/sw.js");
-        console.log("[Push] SW registered, scope:", swReg.scope);
+        const swReg = await navigator.serviceWorker.register("/sw.js");
         await navigator.serviceWorker.ready;
-        console.log("[Push] SW ready");
 
         const existing = await swReg.pushManager.getSubscription();
+
         if (existing) {
-          console.log("[Push] Already subscribed, re-saving...");
+          console.log("[Push] Existing subscription found, syncing userId...");
           const subJson = existing.toJSON();
           await fetch("/api/push/subscribe", {
             method: "POST",
@@ -48,23 +68,20 @@ export function usePushNotifications() {
               auth: subJson.keys?.auth,
             }),
           });
+          console.log("[Push] Synced existing subscription for user", currentUserId);
           return;
         }
 
-        console.log("[Push] Requesting notification permission...");
         const permission = await Notification.requestPermission();
-        console.log("[Push] Permission:", permission);
         if (permission !== "granted") return;
 
-        console.log("[Push] Subscribing to push...");
         const subscription = await swReg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
         });
-        console.log("[Push] Subscribed:", subscription.endpoint.substring(0, 60));
 
         const subJson = subscription.toJSON();
-        const res = await fetch("/api/push/subscribe", {
+        await fetch("/api/push/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -73,28 +90,14 @@ export function usePushNotifications() {
             auth: subJson.keys?.auth,
           }),
         });
-        console.log("[Push] Subscribe API response:", res.status, await res.json());
+        console.log("[Push] New subscription created for user", currentUserId);
       } catch (err) {
-        console.error("[Push] Error:", err);
+        if (!cancelled) console.error("[Push] Error:", err);
       }
     };
 
     run();
 
-    return () => {
-      if (swReg) {
-        swReg.pushManager.getSubscription().then((sub) => {
-          if (sub) {
-            const endpoint = sub.endpoint;
-            sub.unsubscribe().catch(() => {});
-            fetch("/api/push/unsubscribe", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ endpoint }),
-            }).catch(() => {});
-          }
-        });
-      }
-    };
+    return () => { cancelled = true; };
   }, [user]);
 }
