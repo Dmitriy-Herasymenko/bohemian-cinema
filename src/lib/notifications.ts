@@ -16,7 +16,7 @@ function ensureVapid() {
     webPush.setVapidDetails(
       process.env.VAPID_EMAIL || "mailto:bohemian-cinema@example.com",
       normalizedPub,
-      priv
+      priv.trim().replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_")
     );
     vapidConfigured = true;
     return true;
