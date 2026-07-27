@@ -59,12 +59,17 @@ export async function notifyNewMovie(movieTitle: string, creatorName: string, mo
 }
 
 export async function notifyChatMessage(senderName: string, text: string, senderId: string, senderGender?: string) {
-  if (!ensureVapid()) return;
+  console.log("[Push] notifyChatMessage called, senderId:", senderId);
+  if (!ensureVapid()) {
+    console.error("[Push] VAPID not configured!");
+    return;
+  }
+  console.log("[Push] VAPID configured OK");
 
   const subscriptions = await prisma.pushSubscription.findMany({
     where: { userId: { not: senderId } },
   });
-  console.log(`[Push] Chat: sending to ${subscriptions.length} subscriptions (excluding sender)`);
+  console.log(`[Push] Chat: found ${subscriptions.length} subscriptions (excluding sender ${senderId})`);
   if (subscriptions.length === 0) return;
 
   const genderLabel = senderGender === "female" ? "👩" : "👨";
@@ -75,21 +80,22 @@ export async function notifyChatMessage(senderName: string, text: string, sender
     url: "/chat",
   });
 
-  const results = await Promise.allSettled(
-    subscriptions.map((sub) =>
-      webPush.sendNotification(
+  for (const sub of subscriptions) {
+    const type = sub.endpoint.includes("apple") ? "Apple" : "FCM";
+    try {
+      await webPush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
         payload
-      ).catch((err) => {
-        console.error(`[Push] Chat failed for sub ${sub.id}:`, err.statusCode, err.message);
-        if (err.statusCode === 404 || err.statusCode === 410) {
-          return prisma.pushSubscription.deleteMany({ where: { id: sub.id } });
-        }
-        throw err;
-      })
-    )
-  );
+      );
+      console.log(`[Push] ✅ Sent to ${type} (${sub.endpoint.substring(0, 40)}...)`);
+    } catch (err: any) {
+      console.error(`[Push] ❌ Failed ${type}:`, err.statusCode, err.message?.substring(0, 150));
+      if (err.statusCode === 404 || err.statusCode === 410) {
+        await prisma.pushSubscription.delete({ where: { id: sub.id } });
+        console.log(`[Push] Deleted stale sub ${sub.id}`);
+      }
+    }
+  }
 
-  console.log("[Push] Chat results:", results.map((r) => r.status));
-  return results;
+  console.log("[Push] Chat notifications done");
 }
