@@ -7,8 +7,10 @@ export async function POST(request: Request) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const { endpoint, p256dh, auth } = await request.json();
-    if (!endpoint || !p256dh || !auth) return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
+    const body = await request.json();
+    const { endpoint, p256dh, auth } = body;
+    console.log("[Push Subscribe] userId:", session.userId, "endpoint:", endpoint?.substring(0, 50), "hasKeys:", !!p256dh, !!auth);
+    if (!endpoint || !p256dh || !auth) return NextResponse.json({ error: "Invalid subscription", received: { endpoint: !!endpoint, p256dh: !!p256dh, auth: !!auth } }, { status: 400 });
 
     await prisma.pushSubscription.deleteMany({ where: { endpoint } });
 

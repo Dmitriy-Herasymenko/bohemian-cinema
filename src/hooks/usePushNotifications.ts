@@ -34,8 +34,9 @@ async function subscribePush(userId: string) {
   });
 
   const subJson = subscription.toJSON();
-  await fetch("/api/push/subscribe", {
+  const res = await fetch("/api/push/subscribe", {
     method: "POST",
+    credentials: "same-origin",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       endpoint: subJson.endpoint,
@@ -43,6 +44,10 @@ async function subscribePush(userId: string) {
       auth: subJson.keys?.auth,
     }),
   });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    console.error("[Push] Subscribe server error:", res.status, err);
+  }
   console.log("[Push] Subscribed for user", userId);
 }
 
