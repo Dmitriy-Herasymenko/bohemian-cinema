@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (err: any) {
-    console.error("[Push Subscribe] Error:", err?.message, err?.code);
-    return NextResponse.json({ error: err?.message || "Internal error" }, { status: 500 });
+    console.error("[Push Subscribe] Error:", err?.message, err?.code, err?.meta);
+    return NextResponse.json({ error: err?.message, code: err?.code, meta: err?.meta }, { status: 500 });
   }
 }
