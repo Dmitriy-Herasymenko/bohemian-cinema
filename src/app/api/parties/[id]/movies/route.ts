@@ -49,7 +49,9 @@ export async function POST(
     include: { createdBy: { select: { name: true, gender: true } } },
   });
 
-  notifyNewMovie(title, movie.createdBy?.name || "Хтось", slug, movie.createdBy?.gender || undefined).catch(() => {});
+  await notifyNewMovie(title, movie.createdBy?.name || "Хтось", slug, movie.createdBy?.gender || undefined).catch((err) => {
+    console.error("[Party movies] Push notification failed:", err?.statusCode, err?.message);
+  });
 
   return NextResponse.json(movie);
 }
