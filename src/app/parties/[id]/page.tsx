@@ -58,7 +58,7 @@ export default function PartyDetailPage() {
       <Link href="/parties" className="text-amber-400 hover:text-amber-300 transition-colors">← Назад</Link>
 
       {isUpcoming && isMember ? (
-        <EditPartyHeader party={party} allUsers={allUsers} onUpdate={fetchParty} />
+        <EditPartyHeader party={party as Party} allUsers={allUsers} onUpdate={fetchParty} />
       ) : (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
