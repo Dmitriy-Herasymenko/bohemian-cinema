@@ -19,6 +19,10 @@ export async function POST(request: Request) {
   logs.push(`VAPID priv exists: ${!!priv} (length: ${priv?.length || 0})`);
   logs.push(`VAPID email: ${email || "not set"}`);
   logs.push(`NODE_ENV: ${process.env.NODE_ENV}`);
+  logs.push(`Key raw last 10: "${pub?.slice(-10)}"`);
+  logs.push(`Key has =: ${pub?.includes("=")}`);
+  logs.push(`Key has +: ${pub?.includes("+")}`);
+  logs.push(`Key has /: ${pub?.includes("/")}`);
 
   if (!pub || !priv) {
     logs.push("ERROR: Missing VAPID keys");
@@ -27,6 +31,8 @@ export async function POST(request: Request) {
 
   try {
     const normalizedPub = pub.replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
+    logs.push(`Normalized length: ${normalizedPub.length}`);
+    logs.push(`Normalized last 10: "${normalizedPub.slice(-10)}"`);
     webPush.setVapidDetails(
       email || "mailto:bohemian-cinema@example.com",
       normalizedPub,
