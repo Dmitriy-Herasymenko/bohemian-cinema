@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { notifyChatMessage } from "@/lib/notifications";
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 
 export async function GET(request: Request) {
   const session = await getSession();
@@ -38,8 +38,10 @@ export async function POST(request: Request) {
     include: { user: { select: { id: true, name: true, avatar: true } } },
   });
 
-  await notifyChatMessage(session.name, text.trim(), session.userId, session.gender).catch((err) => {
-    console.error("[Chat] Push notification failed:", err?.statusCode, err?.message);
+  after(async () => {
+    await notifyChatMessage(session.name, text.trim(), session.userId, session.gender).catch((err) => {
+      console.error("[Chat] Push notification failed:", err?.statusCode, err?.message);
+    });
   });
 
   return NextResponse.json(message);
