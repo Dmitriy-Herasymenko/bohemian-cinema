@@ -55,33 +55,25 @@ export function usePushNotifications() {
         await navigator.serviceWorker.ready;
 
         const existing = await swReg.pushManager.getSubscription();
-
         if (existing) {
-          console.log("[Push] Existing subscription found, syncing userId...");
-          const subJson = existing.toJSON();
-          await fetch("/api/push/subscribe", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              endpoint: subJson.endpoint,
-              p256dh: subJson.keys?.p256dh,
-              auth: subJson.keys?.auth,
-            }),
-          });
-          console.log("[Push] Synced existing subscription for user", currentUserId);
-          return;
+          console.log("[Push] Unsubscribing old subscription...");
+          await existing.unsubscribe().catch(() => {});
         }
 
         const permission = await Notification.requestPermission();
-        if (permission !== "granted") return;
+        if (permission !== "granted") {
+          console.log("[Push] Permission not granted:", permission);
+          return;
+        }
 
+        console.log("[Push] Creating fresh push subscription...");
         const subscription = await swReg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
         });
 
         const subJson = subscription.toJSON();
-        await fetch("/api/push/subscribe", {
+        const res = await fetch("/api/push/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -90,7 +82,8 @@ export function usePushNotifications() {
             auth: subJson.keys?.auth,
           }),
         });
-        console.log("[Push] New subscription created for user", currentUserId);
+        const data = await res.json();
+        console.log("[Push] New subscription created for user", currentUserId, "| API:", res.status, data);
       } catch (err) {
         if (!cancelled) console.error("[Push] Error:", err);
       }
